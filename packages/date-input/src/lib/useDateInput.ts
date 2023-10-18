@@ -27,6 +27,7 @@ import {
   getActiveElement,
   getDateFromDateSections,
   getInitialReferenceValue,
+  getLocaleInfo,
   getSectionOrder,
   getSectionTypeGranularity,
   getSectionsBoundaries,
@@ -40,14 +41,16 @@ import {
 } from './utils';
 import { AdapterDateFns } from './AdapterDateFns';
 import { useFieldCharacterEditing } from './useFieldCharacterEditing';
-import { useValueWithTimezone } from './useValueWithTimezone';
 
 export type UseDateInputParams = Omit<
   ComponentPropsWithRef<'input'>,
-  'type' | 'value' | 'defaultValue'
+  'type' | 'value' | 'defaultValue' | 'onChange'
 > & {
   value?: Date;
   defaultValue?: Date;
+  // onChange?: (event: React.ChangeEvent<HTMLInputElement>, data: ChangeData) => void;
+  onChange?: (...args: any[]) => void;
+  locale?: string;
 };
 
 export function useDateInput(
@@ -56,7 +59,9 @@ export function useDateInput(
   const {
     ref,
     defaultValue,
+    locale,
     onBlur,
+    onChange,
     onClick,
     onFocus,
     onKeyDown,
@@ -69,40 +74,41 @@ export function useDateInput(
   const handleRef = useForkRef(ref, inputRef);
   const utils = useMemo(() => new AdapterDateFns(), []);
 
-  const { value: valueFromTheOutside, handleValueChange } =
-    useValueWithTimezone({
-      defaultValue,
-      value: valueProp,
-      onChange: console.log,
-      utils,
-    });
+  const { formatLocale, textLocale } = getLocaleInfo(locale);
+
+  const firstDefaultValue = useRef(defaultValue);
+  const valueFromTheOutside = valueProp ?? firstDefaultValue.current ?? null;
+
+  const handleValueChange = useEventCallback(
+    (newValue: Date | null, ...otherParams: any[]) => {
+      onChange?.(newValue, ...otherParams);
+    }
+  );
 
   const sectionsValueBoundaries = useMemo(
     () => getSectionsBoundaries(utils),
     [utils]
   );
+  console.log({ sectionsValueBoundaries });
 
   const getSectionsFromValue = useCallback(
     (
       value: Date | undefined | null,
       fallbackSections: FieldSection[] | null = null
     ): FieldSection[] =>
-      _getSectionsFromValue(utils, value, fallbackSections, false, (date) =>
+      _getSectionsFromValue(utils, value, fallbackSections, (date) =>
         splitFormatIntoSections(
           utils,
-          utils.formats.keyboardDate, //format,
+          utils.formats.keyboardDate,
           date,
-          'dense',
-          false,
-          false
+          textLocale
         )
       ),
-    []
+    [utils]
   );
 
   const [state, setState] = useState(() => {
     const sections = getSectionsFromValue(valueFromTheOutside);
-
     const stateWithoutReferenceDate = {
       sections,
       value: valueFromTheOutside,
@@ -126,6 +132,8 @@ export function useDateInput(
       referenceValue,
     };
   });
+
+  console.log(state.sections);
 
   const [selectedSections, _setSelectedSections] =
     useState<FieldSelectedSections>(null);
@@ -288,7 +296,7 @@ export function useDateInput(
       modified: true,
     };
 
-    return addPositionPropertiesToSections(newSections, false);
+    return addPositionPropertiesToSections(newSections);
   };
 
   const publishValue = ({
@@ -308,7 +316,7 @@ export function useDateInput(
       tempValueStrAndroid: null,
     }));
 
-    if (areDatesEqual(utils, state.value as any, value)) {
+    if (areDatesEqual(utils, state.value, value)) {
       return;
     }
 
@@ -332,7 +340,6 @@ export function useDateInput(
   };
 
   const updateSectionValue = ({
-    activeSection,
     newSectionValue,
     shouldGoToNextSection,
   }: UpdateSectionValueParams) => {
@@ -434,14 +441,7 @@ export function useDateInput(
         return null;
       }
 
-      const sections = splitFormatIntoSections(
-        utils,
-        format,
-        date,
-        'dense',
-        false,
-        false
-      );
+      const sections = splitFormatIntoSections(utils, format, date, textLocale);
       return mergeDateIntoReferenceDate(
         utils,
         date,
@@ -647,17 +647,9 @@ export function useDateInput(
         selectedSectionIndexes &&
         selectedSectionIndexes.startIndex === selectedSectionIndexes.endIndex
       ) {
-        const activeSection = state.sections[selectedSectionIndexes.startIndex];
-
         const lettersOnly = /^[a-zA-Z]+$/.test(pastedValue);
         const digitsOnly = /^[0-9]+$/.test(pastedValue);
-        const digitsAndLetterOnly =
-          /^(([a-zA-Z]+)|)([0-9]+)(([a-zA-Z]+)|)$/.test(pastedValue);
-        const isValidPastedValue =
-          (activeSection.contentType === 'letter' && lettersOnly) ||
-          (activeSection.contentType === 'digit' && digitsOnly) ||
-          (activeSection.contentType === 'digit-with-letter' &&
-            digitsAndLetterOnly);
+        const isValidPastedValue = digitsOnly;
         if (isValidPastedValue) {
           // Early return to let the paste update section, value
           return;
@@ -677,9 +669,11 @@ export function useDateInput(
   );
 
   const sectionOrder = useMemo(
-    () => getSectionOrder(state.sections, false),
+    () => getSectionOrder(state.sections),
     [state.sections]
   );
+
+  console.log({ sectionOrder });
 
   const handleKeyDown = useEventCallback(
     (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -785,12 +779,10 @@ export function useDateInput(
             activeSection,
             event.key as AvailableAdjustKeyCode,
             sectionsValueBoundaries,
-            activeDateManager.date,
-            { minutesStep: undefined }
+            activeDateManager.date
           );
 
           updateSectionValue({
-            activeSection,
             newSectionValue,
             shouldGoToNextSection: false,
           });
@@ -816,5 +808,8 @@ export function useDateInput(
     onMouseUp: handleMouseUp,
     onPaste: handlePaste,
     value: shouldShowPlaceholder ? '' : valueStr,
+    type: 'text',
+    // https://css-tricks.com/everything-you-ever-wanted-to-know-about-inputmode/#aa-decimal
+    inputMode: rest.inputMode || 'decimal',
   };
 }

@@ -1,3 +1,5 @@
+import { TextLocale } from './localeText';
+
 export type FieldSelectedSectionsIndexes = {
   startIndex: number;
   endIndex: number;
@@ -19,17 +21,7 @@ export type FieldSectionWithoutPosition<
   TSection extends FieldSection = FieldSection
 > = Omit<TSection, 'start' | 'end' | 'startInInput' | 'endInInput'>;
 
-export type FieldSectionType =
-  | 'year'
-  | 'month'
-  | 'day'
-  | 'weekDay'
-  | 'hours'
-  | 'minutes'
-  | 'seconds'
-  | 'meridiem';
-
-export type FieldSectionContentType = 'digit' | 'digit-with-letter' | 'letter';
+export type FieldSectionType = 'year' | 'month' | 'day';
 
 export interface FieldSection {
   /**
@@ -55,27 +47,6 @@ export interface FieldSection {
    * Type of the section.
    */
   type: FieldSectionType;
-  /**
-   * Type of content of the section.
-   * Will determine if we should apply a digit-based editing or a letter-based editing.
-   */
-  contentType: FieldSectionContentType;
-  /**
-   * If `true`, the value of this section is supposed to have leading zeroes when parsed by the date library.
-   * For example, the value `1` should be rendered as "01" instead of "1".
-   * @deprecated Will be removed in v7, use `hasLeadingZerosInFormat` instead.
-   */
-  hasLeadingZeros: boolean;
-  /**
-   * If `true`, the value of this section is supposed to have leading zeroes when parsed by the date library.
-   * For example, the value `1` should be rendered as "01" instead of "1".
-   */
-  hasLeadingZerosInFormat: boolean;
-  /**
-   * If `true`, the value of this section is supposed to have leading zeroes when rendered in the input.
-   * For example, the value `1` should be rendered as "01" instead of "1".
-   */
-  hasLeadingZerosInInput: boolean;
   /**
    * If `true`, the section value has been modified since the last time the sections were generated from a valid date.
    * When we can generate a valid date from the section, we don't directly pass it to `onChange`,
@@ -124,21 +95,16 @@ export type FieldSectionValueBoundaries<
 > = {
   minimum: number;
   maximum: number;
-} & (SectionType extends 'day' ? { longestMonth: TDate } : {});
+};
 
 export type FieldSectionsValueBoundaries = {
   [SectionType in FieldSectionType]: (params: {
     currentDate: Date | null;
     format: string;
-    contentType: FieldSectionContentType;
   }) => FieldSectionValueBoundaries<Date, SectionType>;
 };
 
 export type UpdateSectionValueParams = {
-  /**
-   * The section on which we want to apply the new value.
-   */
-  activeSection: FieldSection;
   /**
    * Value to apply to the active section.
    */
@@ -152,12 +118,9 @@ export type UpdateSectionValueParams = {
 export interface GetDefaultReferenceDateProps<TDate> {
   maxDate?: TDate;
   minDate?: TDate;
-  minTime?: TDate;
-  maxTime?: TDate;
-  disableIgnoringDatePartForTimeValidation?: boolean;
 }
 
-export type FieldValueType = 'date' | 'time' | 'date-time';
+export type FieldValueType = 'date';
 
 export type AvailableAdjustKeyCode =
   | 'ArrowUp'
@@ -193,4 +156,23 @@ export type SectionNeighbors = {
      */
     rightIndex: number | null;
   };
+};
+
+export type ChangeData =
+  | {
+      isoValue: null | string;
+      validationError: null;
+    }
+  | {
+      isoValue: null;
+      validationError: 'invalidDate';
+    }
+  | {
+      isoValue: string;
+      validationError: 'minDate' | 'maxDate';
+    };
+
+export type LocaleInfo = {
+  formatLocale: string;
+  textLocale: TextLocale;
 };
