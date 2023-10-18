@@ -6,4 +6,8 @@ export default {
   title: 'DateInput',
 } satisfies Meta;
 
-export const Default: StoryObj<typeof DateInput> = {};
+export const Default: StoryObj<typeof DateInput> = {
+  args: {
+    placeholder: 'MM/DD/YYYY',
+  },
+};

@@ -79,12 +79,10 @@ export const useFieldCharacterEditing = ({
   updateSectionValue,
   sectionsValueBoundaries,
   setTempAndroidValueStr,
-  timezone,
 }: {
   utils: AdapterDateFns;
   sections: FieldSection[];
   setTempAndroidValueStr: (newValue: string | null) => void;
-  timezone: PickersTimezone;
   sectionsValueBoundaries: FieldSectionsValueBoundaries;
   updateSectionValue: (params: UpdateSectionValueParams) => void;
 }) => {

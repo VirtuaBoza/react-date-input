@@ -160,3 +160,39 @@ export interface GetDefaultReferenceDateProps<TDate> {
 }
 
 export type FieldValueType = 'date' | 'time' | 'date-time';
+
+export type AvailableAdjustKeyCode =
+  | 'ArrowUp'
+  | 'ArrowDown'
+  | 'PageUp'
+  | 'PageDown'
+  | 'Home'
+  | 'End';
+
+export type SectionOrdering = {
+  /**
+   * For each section index provide the index of the section displayed on the left and on the right.
+   */
+  neighbors: SectionNeighbors;
+  /**
+   * Index of the section displayed on the far left
+   */
+  startIndex: number;
+  /**
+   * Index of the section displayed on the far right
+   */
+  endIndex: number;
+};
+
+export type SectionNeighbors = {
+  [sectionIndex: number]: {
+    /**
+     * Index of the next section displayed on the left. `null` if it's the leftmost section.
+     */
+    leftIndex: number | null;
+    /**
+     * Index of the next section displayed on the right. `null` if it's the rightmost section.
+     */
+    rightIndex: number | null;
+  };
+};

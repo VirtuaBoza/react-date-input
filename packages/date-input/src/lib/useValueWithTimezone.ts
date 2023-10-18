@@ -12,14 +12,12 @@ import { PickersTimezone } from './types';
 export const useValueWithTimezone = <
   TChange extends (...params: any[]) => void
 >({
-  timezone: timezoneProp,
   value: valueProp,
   defaultValue,
   onChange,
   utils,
 }: {
   utils: AdapterDateFns;
-  timezone: PickersTimezone | undefined;
   value: Date | undefined;
   defaultValue: Date | undefined;
   onChange: TChange | undefined;
@@ -40,11 +38,9 @@ export const useValueWithTimezone = <
     return setTimezone(utils, newValue);
   });
 
-  const timezoneToRender = timezoneProp ?? inputTimezone ?? 'default';
-
   const valueWithTimezoneToRender = useMemo(
     () => setTimezone(utils, inputValue),
-    [utils, timezoneToRender, inputValue]
+    [utils, inputValue]
   );
 
   const handleValueChange = useEventCallback(
@@ -57,6 +53,5 @@ export const useValueWithTimezone = <
   return {
     value: valueWithTimezoneToRender,
     handleValueChange,
-    timezone: timezoneToRender,
   };
 };

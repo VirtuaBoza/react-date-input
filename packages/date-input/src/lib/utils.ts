@@ -1,13 +1,17 @@
 import { AdapterDateFns } from './AdapterDateFns';
 import {
+  AvailableAdjustKeyCode,
   FieldSection,
   FieldSectionContentType,
   FieldSectionType,
   FieldSectionValueBoundaries,
   FieldSectionWithoutPosition,
+  FieldSectionsValueBoundaries,
   FieldValueType,
   GetDefaultReferenceDateProps,
   PickersTimezone,
+  SectionNeighbors,
+  SectionOrdering,
 } from './types';
 
 // https://www.abeautifulsite.net/posts/finding-the-active-element-in-a-shadow-root/
@@ -101,8 +105,6 @@ export const getSectionVisibleValue = (
 
 export const splitFormatIntoSections = (
   utils: AdapterDateFns,
-  timezone: PickersTimezone,
-  // localeText: PickersLocaleText<TDate>,
   format: string,
   date: Date | null,
   formatDensity: 'dense' | 'spacious',
@@ -1177,3 +1179,189 @@ export const updateReferenceValue = (
 
 export const isAndroid = () =>
   navigator.userAgent.toLowerCase().indexOf('android') > -1;
+
+export const adjustSectionValue = (
+  utils: AdapterDateFns,
+  section: FieldSection,
+  keyCode: AvailableAdjustKeyCode,
+  sectionsValueBoundaries: FieldSectionsValueBoundaries,
+  activeDate: Date | null,
+  stepsAttributes?: { minutesStep?: number }
+): string => {
+  const delta = getDeltaFromKeyCode(keyCode);
+  const isStart = keyCode === 'Home';
+  const isEnd = keyCode === 'End';
+
+  const shouldSetAbsolute = section.value === '' || isStart || isEnd;
+
+  const adjustDigitSection = () => {
+    const sectionBoundaries = sectionsValueBoundaries[section.type]({
+      currentDate: activeDate,
+      format: section.format,
+      contentType: section.contentType,
+    });
+
+    const getCleanValue = (value: number) =>
+      cleanDigitSectionValue(utils, value, sectionBoundaries, section);
+
+    const step =
+      section.type === 'minutes' && stepsAttributes?.minutesStep
+        ? stepsAttributes.minutesStep
+        : 1;
+
+    const currentSectionValue = parseInt(section.value, 10);
+    let newSectionValueNumber = currentSectionValue + delta * step;
+
+    if (shouldSetAbsolute) {
+      if (section.type === 'year' && !isEnd && !isStart) {
+        return utils.formatByString(
+          utils.dateWithTimezone(undefined),
+          section.format
+        );
+      }
+
+      if (delta > 0 || isStart) {
+        newSectionValueNumber = sectionBoundaries.minimum;
+      } else {
+        newSectionValueNumber = sectionBoundaries.maximum;
+      }
+    }
+
+    if (newSectionValueNumber % step !== 0) {
+      if (delta < 0 || isStart) {
+        newSectionValueNumber += step - ((step + newSectionValueNumber) % step); // for JS -3 % 5 = -3 (should be 2)
+      }
+      if (delta > 0 || isEnd) {
+        newSectionValueNumber -= newSectionValueNumber % step;
+      }
+    }
+
+    if (newSectionValueNumber > sectionBoundaries.maximum) {
+      return getCleanValue(
+        sectionBoundaries.minimum +
+          ((newSectionValueNumber - sectionBoundaries.maximum - 1) %
+            (sectionBoundaries.maximum - sectionBoundaries.minimum + 1))
+      );
+    }
+
+    if (newSectionValueNumber < sectionBoundaries.minimum) {
+      return getCleanValue(
+        sectionBoundaries.maximum -
+          ((sectionBoundaries.minimum - newSectionValueNumber - 1) %
+            (sectionBoundaries.maximum - sectionBoundaries.minimum + 1))
+      );
+    }
+
+    return getCleanValue(newSectionValueNumber);
+  };
+
+  const adjustLetterSection = () => {
+    const options = getLetterEditingOptions(
+      utils,
+      section.type,
+      section.format
+    );
+    if (options.length === 0) {
+      return section.value;
+    }
+
+    if (shouldSetAbsolute) {
+      if (delta > 0 || isStart) {
+        return options[0];
+      }
+
+      return options[options.length - 1];
+    }
+
+    const currentOptionIndex = options.indexOf(section.value);
+    const newOptionIndex =
+      (currentOptionIndex + options.length + delta) % options.length;
+
+    return options[newOptionIndex];
+  };
+
+  if (
+    section.contentType === 'digit' ||
+    section.contentType === 'digit-with-letter'
+  ) {
+    return adjustDigitSection();
+  }
+
+  return adjustLetterSection();
+};
+
+const getDeltaFromKeyCode = (
+  keyCode: Omit<AvailableAdjustKeyCode, 'Home' | 'End'>
+) => {
+  switch (keyCode) {
+    case 'ArrowUp':
+      return 1;
+    case 'ArrowDown':
+      return -1;
+    case 'PageUp':
+      return 5;
+    case 'PageDown':
+      return -5;
+    default:
+      return 0;
+  }
+};
+
+export const getSectionOrder = (
+  sections: FieldSectionWithoutPosition[],
+  isRTL: boolean
+): SectionOrdering => {
+  const neighbors: SectionNeighbors = {};
+  if (!isRTL) {
+    sections.forEach((_, index) => {
+      const leftIndex = index === 0 ? null : index - 1;
+      const rightIndex = index === sections.length - 1 ? null : index + 1;
+      neighbors[index] = { leftIndex, rightIndex };
+    });
+    return { neighbors, startIndex: 0, endIndex: sections.length - 1 };
+  }
+
+  type PositionMapping = { [from: number]: number };
+  const rtl2ltr: PositionMapping = {};
+  const ltr2rtl: PositionMapping = {};
+
+  let groupedSectionsStart = 0;
+  let groupedSectionsEnd = 0;
+  let RTLIndex = sections.length - 1;
+
+  while (RTLIndex >= 0) {
+    groupedSectionsEnd = sections.findIndex(
+      // eslint-disable-next-line @typescript-eslint/no-loop-func
+      (section, index) =>
+        index >= groupedSectionsStart &&
+        section.endSeparator?.includes(' ') &&
+        // Special case where the spaces were not there in the initial input
+        section.endSeparator !== ' / '
+    );
+    if (groupedSectionsEnd === -1) {
+      groupedSectionsEnd = sections.length - 1;
+    }
+
+    for (let i = groupedSectionsEnd; i >= groupedSectionsStart; i -= 1) {
+      ltr2rtl[i] = RTLIndex;
+      rtl2ltr[RTLIndex] = i;
+      RTLIndex -= 1;
+    }
+    groupedSectionsStart = groupedSectionsEnd + 1;
+  }
+
+  sections.forEach((_, index) => {
+    const rtlIndex = ltr2rtl[index];
+    const leftIndex = rtlIndex === 0 ? null : rtl2ltr[rtlIndex - 1];
+    const rightIndex =
+      rtlIndex === sections.length - 1 ? null : rtl2ltr[rtlIndex + 1];
+
+    neighbors[index] = { leftIndex, rightIndex };
+  });
+
+  return {
+    neighbors,
+    startIndex: rtl2ltr[0],
+    endIndex: rtl2ltr[sections.length - 1],
+  };
+};

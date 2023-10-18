@@ -10,6 +10,7 @@ import useForkRef from './useForkRef';
 import useEventCallback from './useEventCallback';
 import useEnhancedEffect from './useEnhancedEffect';
 import {
+  AvailableAdjustKeyCode,
   FieldSection,
   FieldSelectedSections,
   FieldSelectedSectionsIndexes,
@@ -19,12 +20,14 @@ import {
 import {
   _getSectionsFromValue,
   addPositionPropertiesToSections,
+  adjustSectionValue,
   areDatesEqual,
   cleanString,
   getActiveDateManager,
   getActiveElement,
   getDateFromDateSections,
   getInitialReferenceValue,
+  getSectionOrder,
   getSectionTypeGranularity,
   getSectionsBoundaries,
   getValueStrFromSections,
@@ -53,8 +56,12 @@ export function useDateInput(
   const {
     ref,
     defaultValue,
+    onBlur,
+    onClick,
     onFocus,
+    onKeyDown,
     onMouseUp,
+    onPaste,
     value: valueProp,
     ...rest
   } = params;
@@ -62,21 +69,17 @@ export function useDateInput(
   const handleRef = useForkRef(ref, inputRef);
   const utils = useMemo(() => new AdapterDateFns(), []);
 
-  const {
-    timezone,
-    value: valueFromTheOutside,
-    handleValueChange,
-  } = useValueWithTimezone({
-    defaultValue,
-    value: valueProp,
-    onChange: console.log,
-    timezone: 'default',
-    utils,
-  });
+  const { value: valueFromTheOutside, handleValueChange } =
+    useValueWithTimezone({
+      defaultValue,
+      value: valueProp,
+      onChange: console.log,
+      utils,
+    });
 
   const sectionsValueBoundaries = useMemo(
     () => getSectionsBoundaries(utils),
-    [utils, timezone]
+    [utils]
   );
 
   const getSectionsFromValue = useCallback(
@@ -87,8 +90,6 @@ export function useDateInput(
       _getSectionsFromValue(utils, value, fallbackSections, false, (date) =>
         splitFormatIntoSections(
           utils,
-          'default',
-          // localeText,
           utils.formats.keyboardDate, //format,
           date,
           'dense',
@@ -96,16 +97,7 @@ export function useDateInput(
           false
         )
       ),
-    [
-      // fieldValueManager,
-      // format,
-      // localeText,
-      // isRTL,
-      // shouldRespectLeadingZeros,
-      // utils,
-      // formatDensity,
-      // timezone,
-    ]
+    []
   );
 
   const [state, setState] = useState(() => {
@@ -423,7 +415,6 @@ export function useDateInput(
       updateSectionValue,
       sectionsValueBoundaries,
       setTempAndroidValueStr,
-      timezone,
       utils,
     });
 
@@ -445,7 +436,6 @@ export function useDateInput(
 
       const sections = splitFormatIntoSections(
         utils,
-        timezone,
         format,
         date,
         'dense',
@@ -623,6 +613,193 @@ export function useDateInput(
     }
   );
 
+  const handleClick = useEventCallback(
+    (event: React.MouseEvent<HTMLInputElement>) => {
+      // The click event on the clear button would propagate to the input, trigger this handler and result in a wrong section selection.
+      // We avoid this by checking if the call of `handleInputClick` is actually intended, or a side effect.
+      if (event.isDefaultPrevented()) {
+        return;
+      }
+
+      onClick?.(event);
+      syncSelectionFromDOM();
+    }
+  );
+
+  const handleBlur = useEventCallback(
+    (event: React.FocusEvent<HTMLInputElement>) => {
+      onBlur?.(event);
+      setSelectedSections(null);
+    }
+  );
+
+  const handlePaste = useEventCallback(
+    (event: React.ClipboardEvent<HTMLInputElement>) => {
+      onPaste?.(event);
+
+      if (params.readOnly) {
+        event.preventDefault();
+        return;
+      }
+
+      const pastedValue = event.clipboardData.getData('text');
+      if (
+        selectedSectionIndexes &&
+        selectedSectionIndexes.startIndex === selectedSectionIndexes.endIndex
+      ) {
+        const activeSection = state.sections[selectedSectionIndexes.startIndex];
+
+        const lettersOnly = /^[a-zA-Z]+$/.test(pastedValue);
+        const digitsOnly = /^[0-9]+$/.test(pastedValue);
+        const digitsAndLetterOnly =
+          /^(([a-zA-Z]+)|)([0-9]+)(([a-zA-Z]+)|)$/.test(pastedValue);
+        const isValidPastedValue =
+          (activeSection.contentType === 'letter' && lettersOnly) ||
+          (activeSection.contentType === 'digit' && digitsOnly) ||
+          (activeSection.contentType === 'digit-with-letter' &&
+            digitsAndLetterOnly);
+        if (isValidPastedValue) {
+          // Early return to let the paste update section, value
+          return;
+        }
+        if (lettersOnly || digitsOnly) {
+          // The pasted value correspond to a single section but not the expected type
+          // skip the modification
+          event.preventDefault();
+          return;
+        }
+      }
+
+      event.preventDefault();
+      resetCharacterQuery();
+      updateValueFromValueStr(pastedValue);
+    }
+  );
+
+  const sectionOrder = useMemo(
+    () => getSectionOrder(state.sections, false),
+    [state.sections]
+  );
+
+  const handleKeyDown = useEventCallback(
+    (event: React.KeyboardEvent<HTMLInputElement>) => {
+      onKeyDown?.(event);
+
+      // eslint-disable-next-line default-case
+      switch (true) {
+        // Select all
+        case event.key === 'a' && (event.ctrlKey || event.metaKey): {
+          // prevent default to make sure that the next line "select all" while updating
+          // the internal state at the same time.
+          event.preventDefault();
+          setSelectedSections('all');
+          break;
+        }
+
+        // Move selection to next section
+        case event.key === 'ArrowRight': {
+          event.preventDefault();
+
+          if (selectedSectionIndexes == null) {
+            setSelectedSections(sectionOrder.startIndex);
+          } else if (
+            selectedSectionIndexes.startIndex !==
+            selectedSectionIndexes.endIndex
+          ) {
+            setSelectedSections(selectedSectionIndexes.endIndex);
+          } else {
+            const nextSectionIndex =
+              sectionOrder.neighbors[selectedSectionIndexes.startIndex]
+                .rightIndex;
+            if (nextSectionIndex !== null) {
+              setSelectedSections(nextSectionIndex);
+            }
+          }
+          break;
+        }
+
+        // Move selection to previous section
+        case event.key === 'ArrowLeft': {
+          event.preventDefault();
+
+          if (selectedSectionIndexes == null) {
+            setSelectedSections(sectionOrder.endIndex);
+          } else if (
+            selectedSectionIndexes.startIndex !==
+            selectedSectionIndexes.endIndex
+          ) {
+            setSelectedSections(selectedSectionIndexes.startIndex);
+          } else {
+            const nextSectionIndex =
+              sectionOrder.neighbors[selectedSectionIndexes.startIndex]
+                .leftIndex;
+            if (nextSectionIndex !== null) {
+              setSelectedSections(nextSectionIndex);
+            }
+          }
+          break;
+        }
+
+        // Reset the value of the selected section
+        case event.key === 'Delete': {
+          event.preventDefault();
+
+          if (params.readOnly) {
+            break;
+          }
+
+          if (
+            selectedSectionIndexes == null ||
+            (selectedSectionIndexes.startIndex === 0 &&
+              selectedSectionIndexes.endIndex === state.sections.length - 1)
+          ) {
+            clearValue();
+          } else {
+            clearActiveSection();
+          }
+          resetCharacterQuery();
+          break;
+        }
+
+        // Increment / decrement the selected section value
+        case [
+          'ArrowUp',
+          'ArrowDown',
+          'Home',
+          'End',
+          'PageUp',
+          'PageDown',
+        ].includes(event.key): {
+          event.preventDefault();
+
+          if (params.readOnly || selectedSectionIndexes == null) {
+            break;
+          }
+
+          const activeSection =
+            state.sections[selectedSectionIndexes.startIndex];
+          const activeDateManager = getActiveDateManager(utils, state);
+
+          const newSectionValue = adjustSectionValue(
+            utils,
+            activeSection,
+            event.key as AvailableAdjustKeyCode,
+            sectionsValueBoundaries,
+            activeDateManager.date,
+            { minutesStep: undefined }
+          );
+
+          updateSectionValue({
+            activeSection,
+            newSectionValue,
+            shouldGoToNextSection: false,
+          });
+          break;
+        }
+      }
+    }
+  );
+
   const areAllSectionsEmpty = areDatesEqual(utils, state.value, null);
   const inputHasFocus =
     inputRef.current && inputRef.current === getActiveElement(document);
@@ -631,9 +808,13 @@ export function useDateInput(
   return {
     ...rest,
     ref: handleRef,
+    onBlur: handleBlur,
     onChange: handleChange,
+    onClick: handleClick,
+    onKeyDown: handleKeyDown,
     onFocus: handleFocus,
     onMouseUp: handleMouseUp,
+    onPaste: handlePaste,
     value: shouldShowPlaceholder ? '' : valueStr,
   };
 }

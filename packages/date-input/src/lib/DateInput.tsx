@@ -1,6 +1,8 @@
-import { useDateInput } from './useDateInput';
+import { UseDateInputParams, useDateInput } from './useDateInput';
 
-export function DateInput() {
-  const props = useDateInput();
-  return <input {...props} />;
+export interface DateInputProps extends UseDateInputParams {}
+
+export function DateInput(props: DateInputProps) {
+  const _props = useDateInput(props);
+  return <input {..._props} />;
 }
