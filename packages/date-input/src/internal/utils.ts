@@ -15,7 +15,7 @@ import {
   LocaleInfo,
   SectionNeighbors,
   SectionOrdering,
-} from './types';
+} from '../types';
 
 // https://www.abeautifulsite.net/posts/finding-the-active-element-in-a-shadow-root/
 export const getActiveElement = (

@@ -1,4 +1,4 @@
-import { TextLocale } from './localeText';
+import { TextLocale } from './internal/localeText';
 
 export type FieldSelectedSectionsIndexes = {
   startIndex: number;

@@ -6,9 +6,9 @@ import {
   useRef,
   useState,
 } from 'react';
-import useForkRef from './useForkRef';
-import useEventCallback from './useEventCallback';
-import useEnhancedEffect from './useEnhancedEffect';
+import useForkRef from '../internal/useForkRef';
+import useEventCallback from '../internal/useEventCallback';
+import useEnhancedEffect from '../internal/useEnhancedEffect';
 import {
   AvailableAdjustKeyCode,
   FieldSection,
@@ -16,7 +16,7 @@ import {
   FieldSelectedSectionsIndexes,
   GetDefaultReferenceDateProps,
   UpdateSectionValueParams,
-} from './types';
+} from '../types';
 import {
   _getSectionsFromValue,
   addPositionPropertiesToSections,
@@ -38,9 +38,9 @@ import {
   splitFormatIntoSections,
   updateReferenceValue,
   validateDate,
-} from './utils';
-import { AdapterDateFns } from './AdapterDateFns';
-import { useFieldCharacterEditing } from './useFieldCharacterEditing';
+} from '../internal/utils';
+import { AdapterDateFns } from '../internal/AdapterDateFns';
+import { useFieldCharacterEditing } from '../internal/useFieldCharacterEditing';
 
 export type UseDateInputParams = Omit<
   ComponentPropsWithRef<'input'>,

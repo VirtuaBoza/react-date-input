@@ -5,7 +5,7 @@ import {
   FieldSectionType,
   FieldSectionsValueBoundaries,
   UpdateSectionValueParams,
-} from './types';
+} from '../types';
 import useEventCallback from './useEventCallback';
 import { cleanDigitSectionValue } from './utils';
 
