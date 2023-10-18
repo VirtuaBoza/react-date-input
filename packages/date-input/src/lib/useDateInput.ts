@@ -1,11 +1,4 @@
-import {
-  ComponentProps,
-  ComponentPropsWithRef,
-  useCallback,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import useForkRef from '../internal/useForkRef';
 import useEventCallback from '../internal/useEventCallback';
 import useEnhancedEffect from '../internal/useEnhancedEffect';
@@ -16,6 +9,8 @@ import {
   FieldSelectedSectionsIndexes,
   GetDefaultReferenceDateProps,
   UpdateSectionValueParams,
+  UseDateInputParams,
+  UseDateInputResult,
 } from '../types';
 import {
   _getSectionsFromValue,
@@ -42,23 +37,14 @@ import {
 import { AdapterDateFns } from '../internal/AdapterDateFns';
 import { useFieldCharacterEditing } from '../internal/useFieldCharacterEditing';
 
-export type UseDateInputParams = Omit<
-  ComponentPropsWithRef<'input'>,
-  'type' | 'value' | 'defaultValue' | 'onChange'
-> & {
-  value?: Date;
-  defaultValue?: Date;
-  // onChange?: (event: React.ChangeEvent<HTMLInputElement>, data: ChangeData) => void;
-  onChange?: (...args: any[]) => void;
-  locale?: string;
-};
-
 export function useDateInput(
   params: UseDateInputParams = {}
-): ComponentProps<'input'> {
+): UseDateInputResult {
   const {
     ref,
+    readOnly,
     defaultValue,
+    inputMode,
     locale,
     onBlur,
     onChange,
@@ -68,7 +54,6 @@ export function useDateInput(
     onMouseUp,
     onPaste,
     value: valueProp,
-    ...rest
   } = params;
   const inputRef = useRef<HTMLInputElement>(null);
   const handleRef = useForkRef(ref, inputRef);
@@ -80,8 +65,8 @@ export function useDateInput(
   const valueFromTheOutside = valueProp ?? firstDefaultValue.current ?? null;
 
   const handleValueChange = useEventCallback(
-    (newValue: Date | null, ...otherParams: any[]) => {
-      onChange?.(newValue, ...otherParams);
+    (newValue: Date | null, context: { validationError: string | null }) => {
+      onChange?.(newValue, context);
     }
   );
 
@@ -89,7 +74,6 @@ export function useDateInput(
     () => getSectionsBoundaries(utils),
     [utils]
   );
-  console.log({ sectionsValueBoundaries });
 
   const getSectionsFromValue = useCallback(
     (
@@ -123,7 +107,7 @@ export function useDateInput(
       utils,
       props: {
         // TODO
-      } as GetDefaultReferenceDateProps<Date>,
+      } as GetDefaultReferenceDateProps,
       granularity,
     });
 
@@ -132,8 +116,6 @@ export function useDateInput(
       referenceValue,
     };
   });
-
-  console.log(state.sections);
 
   const [selectedSections, _setSelectedSections] =
     useState<FieldSelectedSections>(null);
@@ -324,8 +306,8 @@ export function useDateInput(
       validationError: validateDate({
         adapter: {
           defaultDates: {
-            maxDate: utils.date('2099-12-31T00:00:00.000')!,
-            minDate: utils.date('1900-01-01T00:00:00.000')!,
+            maxDate: new Date('2099-12-31T00:00:00.000'),
+            minDate: new Date('1900-01-01T00:00:00.000'),
           },
           utils,
         },
@@ -485,9 +467,7 @@ export function useDateInput(
       nonEmptySectionCountBefore === (activeSection.value === '' ? 0 : 1);
 
     const newSections = setSectionValue(selectedSectionIndexes.startIndex, '');
-    const newActiveDate = hasNoOtherNonEmptySections
-      ? null
-      : utils.date(new Date(''));
+    const newActiveDate = hasNoOtherNonEmptySections ? null : new Date();
     const newValues =
       activeDateManager.getNewValuesFromNewActiveDate(newActiveDate);
 
@@ -508,7 +488,7 @@ export function useDateInput(
 
   const handleChange = useEventCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      if (params.readOnly) {
+      if (readOnly) {
         return;
       }
 
@@ -637,7 +617,7 @@ export function useDateInput(
     (event: React.ClipboardEvent<HTMLInputElement>) => {
       onPaste?.(event);
 
-      if (params.readOnly) {
+      if (readOnly) {
         event.preventDefault();
         return;
       }
@@ -668,8 +648,6 @@ export function useDateInput(
     () => getSectionOrder(state.sections),
     [state.sections]
   );
-
-  console.log({ sectionOrder });
 
   const handleKeyDown = useEventCallback(
     (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -734,7 +712,7 @@ export function useDateInput(
         case event.key === 'Delete': {
           event.preventDefault();
 
-          if (params.readOnly) {
+          if (readOnly) {
             break;
           }
 
@@ -762,7 +740,7 @@ export function useDateInput(
         ].includes(event.key): {
           event.preventDefault();
 
-          if (params.readOnly || selectedSectionIndexes == null) {
+          if (readOnly || selectedSectionIndexes == null) {
             break;
           }
 
@@ -794,18 +772,20 @@ export function useDateInput(
   const shouldShowPlaceholder = !inputHasFocus && areAllSectionsEmpty;
 
   return {
-    ...rest,
-    ref: handleRef,
-    onBlur: handleBlur,
-    onChange: handleChange,
-    onClick: handleClick,
-    onKeyDown: handleKeyDown,
-    onFocus: handleFocus,
-    onMouseUp: handleMouseUp,
-    onPaste: handlePaste,
-    value: shouldShowPlaceholder ? '' : valueStr,
-    type: 'text',
-    // https://css-tricks.com/everything-you-ever-wanted-to-know-about-inputmode/#aa-decimal
-    inputMode: rest.inputMode || 'decimal',
+    inputProps: {
+      readOnly,
+      ref: handleRef,
+      onBlur: handleBlur,
+      onChange: handleChange,
+      onClick: handleClick,
+      onKeyDown: handleKeyDown,
+      onFocus: handleFocus,
+      onMouseUp: handleMouseUp,
+      onPaste: handlePaste,
+      value: shouldShowPlaceholder ? '' : valueStr,
+      type: 'text',
+      // https://css-tricks.com/everything-you-ever-wanted-to-know-about-inputmode/#aa-decimal
+      inputMode: inputMode || 'decimal',
+    },
   };
 }

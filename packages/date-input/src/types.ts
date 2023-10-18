@@ -1,4 +1,5 @@
 import { TextLocale } from './internal/localeText';
+import { ComponentProps, ComponentPropsWithRef } from 'react';
 
 export type FieldSelectedSectionsIndexes = {
   startIndex: number;
@@ -17,9 +18,10 @@ export type FieldSelectedSections =
   | 'all'
   | { startIndex: number; endIndex: number };
 
-export type FieldSectionWithoutPosition<
-  TSection extends FieldSection = FieldSection
-> = Omit<TSection, 'start' | 'end' | 'startInInput' | 'endInInput'>;
+export type FieldSectionWithoutPosition = Omit<
+  FieldSection,
+  'start' | 'end' | 'startInInput' | 'endInInput'
+>;
 
 export type FieldSectionType = 'year' | 'month' | 'day';
 
@@ -115,9 +117,9 @@ export type UpdateSectionValueParams = {
   shouldGoToNextSection: boolean;
 };
 
-export interface GetDefaultReferenceDateProps<TDate> {
-  maxDate?: TDate;
-  minDate?: TDate;
+export interface GetDefaultReferenceDateProps {
+  maxDate?: Date;
+  minDate?: Date;
 }
 
 export type FieldValueType = 'date';
@@ -175,4 +177,45 @@ export type ChangeData =
 export type LocaleInfo = {
   formatLocale: string;
   textLocale: TextLocale;
+};
+
+export type UseDateInputParams = Pick<
+  ComponentPropsWithRef<'input'>,
+  | 'inputMode'
+  | 'onBlur'
+  | 'onClick'
+  | 'onFocus'
+  | 'onKeyDown'
+  | 'onMouseUp'
+  | 'onPaste'
+  | 'readOnly'
+  | 'ref'
+> & {
+  value?: Date;
+  defaultValue?: Date;
+  onChange?: (
+    date: Date | null,
+    context: { validationError: string | null }
+  ) => void;
+  locale?: string;
+  max?: string;
+  min?: string;
+};
+
+export type UseDateInputResult = {
+  inputProps: Pick<
+    ComponentPropsWithRef<'input'>,
+    | 'inputMode'
+    | 'onBlur'
+    | 'onClick'
+    | 'onChange'
+    | 'onFocus'
+    | 'onKeyDown'
+    | 'onMouseUp'
+    | 'onPaste'
+    | 'readOnly'
+    | 'ref'
+    | 'type'
+    | 'value'
+  >;
 };

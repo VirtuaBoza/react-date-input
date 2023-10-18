@@ -24,7 +24,6 @@ export const Controlled: StoryObj<typeof DateInput> = {
   },
   render: (args) => {
     const [state, setState] = useState<any>(null);
-    console.log({ state });
     return (
       <>
         <DateInput {...args} value={state} onChange={setState} />

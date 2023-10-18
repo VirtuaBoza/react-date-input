@@ -1,8 +1,6 @@
 import * as React from 'react';
 
 /**
- * TODO v5: consider making it private
- *
  * passes {value} to {ref}
  *
  * WARNING: Be sure to only call this inside a callback that is passed as a ref.

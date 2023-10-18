@@ -64,7 +64,7 @@ export const splitFormatIntoSections = (
 ) => {
   let startSeparator: string = '';
   const sections: FieldSectionWithoutPosition[] = [];
-  const now = utils.date()!;
+  const now = new Date();
 
   const commitToken = (token: string) => {
     if (token === '') {
@@ -235,7 +235,7 @@ export const _getSectionsFromValue = (
 };
 
 export const addPositionPropertiesToSections = (
-  sections: FieldSectionWithoutPosition<FieldSection>[]
+  sections: FieldSectionWithoutPosition[]
 ): FieldSection[] => {
   let position = 0;
   let positionInInput = 0;
@@ -338,10 +338,9 @@ export const getInitialReferenceValue = ({
 }: {
   referenceDate: Date | undefined;
   value: any;
-  props: GetDefaultReferenceDateProps<Date>;
+  props: GetDefaultReferenceDateProps;
   utils: AdapterDateFns;
   granularity: number;
-  getTodayDate?: () => Date;
 }): Date => {
   if (value != null && params.utils.isValid(value)) {
     return value;
@@ -358,16 +357,12 @@ export const getDefaultReferenceDate = ({
   props,
   utils,
   granularity,
-  getTodayDate: inGetTodayDate,
 }: {
-  props: GetDefaultReferenceDateProps<Date>;
+  props: GetDefaultReferenceDateProps;
   utils: AdapterDateFns;
   granularity: number;
-  getTodayDate?: () => Date;
 }) => {
-  let referenceDate = inGetTodayDate
-    ? inGetTodayDate()
-    : roundDate(utils, granularity, getTodayDate(utils));
+  let referenceDate = roundDate(utils, granularity, new Date());
 
   if (props.minDate != null && utils.isAfterDay(props.minDate, referenceDate)) {
     referenceDate = roundDate(utils, granularity, props.minDate);
@@ -396,11 +391,6 @@ const roundDate = (utils: AdapterDateFns, granularity: number, date: Date) => {
 
   return date;
 };
-
-export const getTodayDate = (
-  utils: AdapterDateFns,
-  valueType?: FieldValueType
-) => (valueType === 'date' ? utils.startOfDay(utils.date()) : utils.date());
 
 /**
  * Some date libraries like `dayjs` don't support parsing from date with escaped characters.
@@ -533,7 +523,7 @@ export const validateDate = ({
     disableFuture,
   } = props;
 
-  const now = adapter.utils.date();
+  const now = new Date();
   const minDate = applyDefaultDate(
     adapter.utils,
     props.minDate,
@@ -588,7 +578,7 @@ export const applyDefaultDate = (
 };
 
 export const getSectionsBoundaries = (utils: AdapterDateFns) => {
-  const today = utils.date();
+  const today = new Date();
 
   const { maxDaysInMonth } = getMonthsInYear(utils, today).reduce(
     (acc, month) => {
@@ -666,7 +656,7 @@ export const adjustSectionValue = (
 
     if (shouldSetAbsolute) {
       if (section.type === 'year' && !isEnd && !isStart) {
-        return utils.formatByString(utils.date(), section.format);
+        return utils.formatByString(new Date(), section.format);
       }
 
       if (delta > 0 || isStart) {
