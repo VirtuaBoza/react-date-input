@@ -118,8 +118,6 @@ export interface FieldSection {
   endSeparator: string;
 }
 
-export type PickersTimezone = 'default' | 'system' | 'UTC' | (string & {});
-
 export type FieldSectionValueBoundaries<
   TDate,
   SectionType extends FieldSectionType

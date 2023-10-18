@@ -2,7 +2,6 @@ import { useMemo, useRef } from 'react';
 import useEventCallback from './useEventCallback';
 import { AdapterDateFns } from './AdapterDateFns';
 import { getTimezone, setTimezone } from './utils';
-import { PickersTimezone } from './types';
 
 /**
  * Hooks making sure that:

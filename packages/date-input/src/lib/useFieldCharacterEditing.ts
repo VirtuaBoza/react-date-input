@@ -4,7 +4,6 @@ import {
   FieldSection,
   FieldSectionType,
   FieldSectionsValueBoundaries,
-  PickersTimezone,
   UpdateSectionValueParams,
 } from './types';
 import useEventCallback from './useEventCallback';

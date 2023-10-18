@@ -9,7 +9,6 @@ import {
   FieldSectionsValueBoundaries,
   FieldValueType,
   GetDefaultReferenceDateProps,
-  PickersTimezone,
   SectionNeighbors,
   SectionOrdering,
 } from './types';
@@ -396,7 +395,6 @@ export const cleanLeadingZeros = (valueStr: string, size: number) => {
 
 const getSectionPlaceholder = (
   // utils: AdapterDateFns,
-  // timezone: PickersTimezone,
   // localeText: PickersLocaleText<TDate>,
   sectionConfig: Pick<FieldSection, 'type' | 'contentType'>,
   currentTokenValue: string
