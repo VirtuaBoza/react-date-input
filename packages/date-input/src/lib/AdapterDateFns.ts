@@ -158,16 +158,8 @@ export class AdapterDateFns {
     return startOfDay(value);
   };
 
-  public endOfWeek = (value: Date) => {
-    return endOfWeek(value, { locale: this.locale });
-  };
-
   public addMonths = (value: Date, amount: number) => {
     return addMonths(value, amount);
-  };
-
-  public addDays = (value: Date, amount: number) => {
-    return addDays(value, amount);
   };
 
   public getYear = (value: Date) => {

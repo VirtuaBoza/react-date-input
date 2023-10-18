@@ -647,19 +647,15 @@ export function useDateInput(
         selectedSectionIndexes &&
         selectedSectionIndexes.startIndex === selectedSectionIndexes.endIndex
       ) {
-        const lettersOnly = /^[a-zA-Z]+$/.test(pastedValue);
         const digitsOnly = /^[0-9]+$/.test(pastedValue);
-        const isValidPastedValue = digitsOnly;
-        if (isValidPastedValue) {
+        if (digitsOnly) {
           // Early return to let the paste update section, value
           return;
         }
-        if (lettersOnly || digitsOnly) {
-          // The pasted value correspond to a single section but not the expected type
-          // skip the modification
-          event.preventDefault();
-          return;
-        }
+
+        // skip the modification
+        event.preventDefault();
+        return;
       }
 
       event.preventDefault();

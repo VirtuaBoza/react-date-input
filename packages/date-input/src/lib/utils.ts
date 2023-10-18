@@ -178,34 +178,6 @@ export const getDateSectionConfigFromFormatToken = (
   };
 };
 
-export const doesSectionFormatHaveLeadingZeros = (
-  utils: AdapterDateFns,
-  sectionType: FieldSectionType,
-  format: string
-) => {
-  const now = utils.date();
-
-  switch (sectionType) {
-    // We can't use `changeSectionValueFormat`, because  `utils.parse('1', 'YYYY')` returns `1971` instead of `1`.
-    case 'year': {
-      const formatted0001 = utils.formatByString(utils.setYear(now, 1), format);
-      return formatted0001 === '0001';
-    }
-
-    case 'month': {
-      return utils.formatByString(utils.startOfYear(now), format).length > 1;
-    }
-
-    case 'day': {
-      return utils.formatByString(utils.startOfMonth(now), format).length > 1;
-    }
-
-    default: {
-      throw new Error('Invalid section type');
-    }
-  }
-};
-
 const getEscapedPartsFromFormat = (utils: AdapterDateFns, format: string) => {
   const escapedParts: { start: number; end: number }[] = [];
   const { start: startChar, end: endChar } = utils.escapedCharacters;
@@ -303,24 +275,6 @@ export const addPositionPropertiesToSections = (
 export const cleanString = (dirtyString: string) =>
   dirtyString.replace(/[\u2066\u2067\u2068\u2069]/g, '');
 
-export const getLetterEditingOptions = (
-  utils: AdapterDateFns,
-  sectionType: FieldSectionType,
-  format: string
-) => {
-  switch (sectionType) {
-    case 'month': {
-      return getMonthsInYear(utils, utils.date()).map((month) =>
-        utils.formatByString(month, format!)
-      );
-    }
-
-    default: {
-      return [];
-    }
-  }
-};
-
 export const getMonthsInYear = (utils: AdapterDateFns, year: Date) => {
   const firstMonth = utils.startOfYear(year);
   const months = [firstMonth];
@@ -331,31 +285,6 @@ export const getMonthsInYear = (utils: AdapterDateFns, year: Date) => {
   }
 
   return months;
-};
-
-export const getDaysInWeekStr = (utils: AdapterDateFns, format: string) => {
-  const elements: Date[] = [];
-
-  const now = utils.date();
-  const startDate = utils.startOfWeek(now);
-  const endDate = utils.endOfWeek(now);
-
-  let current = startDate;
-  while (utils.isBefore(current, endDate)) {
-    elements.push(current);
-    current = utils.addDays(current, 1);
-  }
-
-  return elements.map((weekDay) => utils.formatByString(weekDay, format));
-};
-
-export const changeSectionValueFormat = (
-  utils: AdapterDateFns,
-  valueStr: string,
-  currentFormat: string,
-  newFormat: string
-) => {
-  return utils.formatByString(utils.parse(valueStr, currentFormat)!, newFormat);
 };
 
 export const cleanDigitSectionValue = (

@@ -7,14 +7,7 @@ import {
   UpdateSectionValueParams,
 } from './types';
 import useEventCallback from './useEventCallback';
-import {
-  changeSectionValueFormat,
-  cleanDigitSectionValue,
-  doesSectionFormatHaveLeadingZeros,
-  getDateSectionConfigFromFormatToken,
-  getDaysInWeekStr,
-  getLetterEditingOptions,
-} from './utils';
+import { cleanDigitSectionValue } from './utils';
 
 interface CharacterEditingQuery {
   value: string;
