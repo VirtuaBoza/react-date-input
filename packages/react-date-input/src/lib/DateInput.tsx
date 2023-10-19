@@ -1,6 +1,6 @@
 import { UseDateInputParams } from '../types';
 import { useDateInput } from './useDateInput';
-import { ComponentProps } from 'react';
+import { ComponentProps, forwardRef } from 'react';
 
 export interface DateInputProps
   extends Omit<
@@ -9,7 +9,40 @@ export interface DateInputProps
     >,
     UseDateInputParams {}
 
-export function DateInput(props: DateInputProps) {
-  const { inputProps } = useDateInput(props);
-  return <input {...(props as ComponentProps<'input'>)} {...inputProps} />;
-}
+export const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
+  (props, ref) => {
+    const {
+      defaultValue,
+      inputMode,
+      locale,
+      onBlur,
+      onChange,
+      onClick,
+      onDateChange,
+      onFocus,
+      onKeyDown,
+      onMouseUp,
+      onPaste,
+      readOnly,
+      value,
+      ...rest
+    } = props;
+    const { inputProps } = useDateInput({
+      defaultValue,
+      inputMode,
+      locale,
+      onBlur,
+      onChange,
+      onClick,
+      onDateChange,
+      onFocus,
+      onKeyDown,
+      onMouseUp,
+      onPaste,
+      readOnly,
+      ref,
+      value,
+    });
+    return <input {...rest} {...inputProps} />;
+  }
+);

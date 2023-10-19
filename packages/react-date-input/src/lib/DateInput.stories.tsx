@@ -25,6 +25,9 @@ export default {
       type: 'string',
     },
   },
+  parameters: {
+    controls: { exclude: ['ref'] },
+  },
 } satisfies Meta;
 
 export const Uncontrolled: StoryObj<typeof DateInput> = {};
