@@ -27,7 +27,7 @@ export const Controlled: StoryObj<typeof DateInput> = {
   },
   render: (args) => {
     const [value, setValue] = useState<string | null>('');
-    console.log({ value });
+
     return (
       <>
         <DateInput {...args} value={value} onDateChange={setValue} />
