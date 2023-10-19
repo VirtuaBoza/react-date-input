@@ -6,25 +6,30 @@ export default {
   component: DateInput,
   title: 'DateInput',
   argTypes: {
-    onChange: {
-      action: 'onChange',
-    },
     onDateChange: {
       action: 'onDateChange',
+    },
+    placeholder: {
+      type: 'string',
+    },
+    readOnly: {
+      type: 'boolean',
+    },
+    value: {
+      type: 'string',
+    },
+    defaultValue: {
+      type: 'string',
+    },
+    locale: {
+      type: 'string',
     },
   },
 } satisfies Meta;
 
-export const Uncontrolled: StoryObj<typeof DateInput> = {
-  args: {
-    placeholder: 'MM/DD/YYYY',
-  },
-};
+export const Uncontrolled: StoryObj<typeof DateInput> = {};
 
 export const Controlled: StoryObj<typeof DateInput> = {
-  args: {
-    placeholder: 'MM/DD/YYYY',
-  },
   render: (args) => {
     const [value, setValue] = useState<string | null>('');
 
