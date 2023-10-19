@@ -316,15 +316,6 @@ export const SECTION_TYPE_GRANULARITY = {
   month: 2,
   day: 3,
 };
-export const getSectionTypeGranularity = (sections: FieldSection[]) =>
-  Math.max(
-    ...sections.map(
-      (section) =>
-        SECTION_TYPE_GRANULARITY[
-          section.type as keyof typeof SECTION_TYPE_GRANULARITY
-        ] ?? 1
-    )
-  );
 
 export const getInitialReferenceValue = ({
   value,
@@ -607,12 +598,6 @@ export const getSectionsBoundaries = (utils: AdapterDateFns) => {
   };
 };
 
-export const parseValueStr = (
-  valueStr: string,
-  referenceValue: Date,
-  parseDate: (str: string, v: Date) => Date | null
-) => parseDate(valueStr.trim(), referenceValue);
-
 export const updateReferenceValue = (
   utils: AdapterDateFns,
   value: any,
@@ -746,13 +731,7 @@ export function getLocaleInfo(localeFromProps: string | undefined): LocaleInfo {
   };
 }
 
-export function createSections({
-  formatLocale,
-  textLocale,
-}: {
-  formatLocale: string;
-  textLocale: TextLocale;
-}) {
+export function getDatePartIndexesForFormat(formatLocale: string) {
   const refYear = '3333';
   const refMonth = '11';
   const refDay = '22';
@@ -767,11 +746,34 @@ export function createSections({
   const splitDate = formattedDate.split('/');
   const yearIndex = splitDate.findIndex((el) => el === refYear);
   const monthIndex = splitDate.findIndex((el) => el === refMonth);
+  const dayIndex = splitDate.findIndex((el) => el === refDay);
+  const inOrder: Array<'month' | 'day' | 'year'> = [];
+  for (let i = 0; i < 3; i++) {
+    const type = i === yearIndex ? 'year' : i === monthIndex ? 'month' : 'day';
+    inOrder.push(type);
+  }
+  return {
+    inOrder,
+    byType: {
+      year: yearIndex,
+      month: monthIndex,
+      day: dayIndex,
+    },
+  };
+}
+
+export function createSections({
+  formatLocale,
+  textLocale,
+}: {
+  formatLocale: string;
+  textLocale: TextLocale;
+}) {
+  const types = getDatePartIndexesForFormat(formatLocale).inOrder;
 
   const sections: FieldSection[] = [];
   let start = 0;
-  for (let i = 0; i < 3; i++) {
-    const type = i === yearIndex ? 'year' : i === monthIndex ? 'month' : 'day';
+  types.forEach((type, i) => {
     const { length, format } = (() => {
       switch (type) {
         case 'day':
@@ -797,7 +799,7 @@ export function createSections({
       value: '',
     });
     start = end;
-  }
+  });
 
   return sections;
 }
@@ -840,19 +842,19 @@ export function isValidIsoDate(isoDate: unknown): isoDate is string {
   return false;
 }
 
-export function sectionsMatch(
-  sectionsA: FieldSection[],
-  sectionsB: FieldSection[]
-) {
-  if (sectionsA.length !== sectionsB.length) {
-    return false;
-  }
-  let same = true;
-  sectionsA.forEach((sectionA, index) => {
-    const sectionB = sectionsB[index];
-    Object.entries(sectionA).forEach(([key, value]) => {
-      same = same && value === sectionB[key as keyof typeof sectionB];
-    });
-  });
-  return same;
-}
+// export function sectionsMatch(
+//   sectionsA: FieldSection[],
+//   sectionsB: FieldSection[]
+// ) {
+//   if (sectionsA.length !== sectionsB.length) {
+//     return false;
+//   }
+//   let same = true;
+//   sectionsA.forEach((sectionA, index) => {
+//     const sectionB = sectionsB[index];
+//     Object.entries(sectionA).forEach(([key, value]) => {
+//       same = same && value === sectionB[key as keyof typeof sectionB];
+//     });
+//   });
+//   return same;
+// }

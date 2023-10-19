@@ -25,13 +25,10 @@ import {
   getInitialReferenceValue,
   getLocaleInfo,
   getSectionOrder,
-  getSectionTypeGranularity,
   getSectionsBoundaries,
   getValueStrFromSections,
   isAndroid,
   mergeDateIntoReferenceDate,
-  parseValueStr,
-  sectionsMatch,
   splitFormatIntoSections,
   updateReferenceValue,
   validateDate,
@@ -101,15 +98,12 @@ export function useDateInput(
   );
 
   const [state, setState] = useState(() => {
-    const sections = getSectionsFromValue(valueFromTheOutside);
     const stateWithoutReferenceDate = {
-      sections,
       value: valueFromTheOutside,
       referenceValue: null,
       tempValueStrAndroid: null as string | null,
     };
 
-    const granularity = getSectionTypeGranularity(sections);
     const referenceValue = getInitialReferenceValue({
       referenceDate: new Date(),
       value: valueFromTheOutside,
@@ -117,7 +111,7 @@ export function useDateInput(
       props: {
         // TODO
       } as GetDefaultReferenceDateProps,
-      granularity,
+      granularity: 3,
     });
 
     return {
@@ -146,7 +140,7 @@ export function useDateInput(
       if (selectedSections === 'all') {
         return {
           startIndex: 0,
-          endIndex: state.sections.length - 1,
+          endIndex: mySections.length - 1,
           shouldSelectBoundarySelectors: true,
         };
       }
@@ -156,7 +150,7 @@ export function useDateInput(
       }
 
       if (typeof selectedSections === 'string') {
-        const selectedSectionIndex = state.sections.findIndex(
+        const selectedSectionIndex = mySections.findIndex(
           (section) => section.type === selectedSections
         );
 
@@ -167,11 +161,11 @@ export function useDateInput(
       }
 
       return selectedSections;
-    }, [selectedSections, state.sections]);
+    }, [selectedSections, mySections]);
 
   const valueStr = useMemo(
-    () => state.tempValueStrAndroid ?? getValueStrFromSections(state.sections),
-    [state.sections, state.tempValueStrAndroid]
+    () => state.tempValueStrAndroid ?? getValueStrFromSections(mySections),
+    [mySections, state.tempValueStrAndroid]
   );
 
   useEnhancedEffect(() => {
@@ -188,9 +182,8 @@ export function useDateInput(
       return;
     }
 
-    const firstSelectedSection =
-      state.sections[selectedSectionIndexes.startIndex];
-    const lastSelectedSection = state.sections[selectedSectionIndexes.endIndex];
+    const firstSelectedSection = mySections[selectedSectionIndexes.startIndex];
+    const lastSelectedSection = mySections[selectedSectionIndexes.endIndex];
     let selectionStart = firstSelectedSection.start;
     let selectionEnd = lastSelectedSection.endInInput;
 
@@ -222,23 +215,21 @@ export function useDateInput(
     }
     const browserStartIndex = inputRef.current!.selectionStart ?? 0;
     let nextSectionIndex: number;
-    if (browserStartIndex <= state.sections[0].start) {
+    if (browserStartIndex <= mySections[0].start) {
       // Special case if browser index is in invisible characters at the beginning
       nextSectionIndex = 1;
     } else if (
-      browserStartIndex >= state.sections[state.sections.length - 1].endInInput
+      browserStartIndex >= mySections[mySections.length - 1].endInInput
     ) {
       // If the click is after the last character of the input, then we want to select the 1st section.
       nextSectionIndex = 1;
     } else {
-      nextSectionIndex = state.sections.findIndex(
+      nextSectionIndex = mySections.findIndex(
         (section) => section.start > browserStartIndex
       );
     }
     const sectionIndex =
-      nextSectionIndex === -1
-        ? state.sections.length - 1
-        : nextSectionIndex - 1;
+      nextSectionIndex === -1 ? mySections.length - 1 : nextSectionIndex - 1;
     setSelectedSections(sectionIndex);
   };
 
@@ -276,7 +267,7 @@ export function useDateInput(
   );
 
   const setSectionValue = (sectionIndex: number, newSectionValue: string) => {
-    const newSections = [...state.sections];
+    const newSections = [...mySections];
 
     newSections[sectionIndex] = {
       ...newSections[sectionIndex],
@@ -298,11 +289,11 @@ export function useDateInput(
   }) => {
     setState((prevState) => ({
       ...prevState,
-      sections,
       value,
       referenceValue,
       tempValueStrAndroid: null,
     }));
+    setMySections(sections);
 
     if (areDatesEqual(utils, state.value, value)) {
       return;
@@ -337,7 +328,7 @@ export function useDateInput(
     if (
       shouldGoToNextSection &&
       selectedSectionIndexes &&
-      selectedSectionIndexes.startIndex < state.sections.length - 1
+      selectedSectionIndexes.startIndex < mySections.length - 1
     ) {
       setSelectedSections(selectedSectionIndexes.startIndex + 1);
     } else if (
@@ -393,10 +384,10 @@ export function useDateInput(
       return publishValue({ ...values, sections: newSections });
     }
 
+    setMySections(newSections);
     return setState((prevState) => ({
       ...prevState,
       ...values,
-      sections: newSections,
       tempValueStrAndroid: null,
     }));
   };
@@ -406,7 +397,7 @@ export function useDateInput(
 
   const { applyCharacterEditing, resetCharacterQuery } =
     useFieldCharacterEditing({
-      sections: state.sections,
+      sections: mySections,
       updateSectionValue,
       sectionsValueBoundaries,
       setTempAndroidValueStr,
@@ -417,7 +408,10 @@ export function useDateInput(
     publishValue({
       value: null,
       referenceValue: state.referenceValue,
-      sections: getSectionsFromValue(null),
+      sections: createSections({
+        formatLocale,
+        textLocale,
+      }),
     });
   };
 
@@ -439,22 +433,18 @@ export function useDateInput(
       );
     };
 
-    const newValue = parseValueStr(
-      valueStr,
-      state.referenceValue,
-      parseDateStr
-    );
+    const newValue = parseDateStr(valueStr.trim(), state.referenceValue);
 
     const newReferenceValue = updateReferenceValue(
       utils,
       newValue,
       state.referenceValue
     );
-
+    console.log({ newValue });
     publishValue({
       value: newValue,
       referenceValue: newReferenceValue,
-      sections: getSectionsFromValue(newValue, state.sections),
+      sections: getSectionsFromValue(newValue, mySections),
     });
   };
 
@@ -463,11 +453,11 @@ export function useDateInput(
       return;
     }
 
-    const activeSection = state.sections[selectedSectionIndexes.startIndex];
+    const activeSection = mySections[selectedSectionIndexes.startIndex];
     const activeDateManager = getActiveDateManager(utils, state);
 
     const nonEmptySectionCountBefore = activeDateManager
-      .getSections(state.sections)
+      .getSections(mySections)
       .filter((section) => section.value !== '').length;
     const hasNoOtherNonEmptySections =
       nonEmptySectionCountBefore === (activeSection.value === '' ? 0 : 1);
@@ -486,9 +476,10 @@ export function useDateInput(
       setState((prevState) => ({
         ...prevState,
         ...newValues,
-        sections: newSections,
+        // sections: newSections,
         tempValueStrAndroid: null,
       }));
+      setMySections(newSections);
     }
   };
 
@@ -522,14 +513,12 @@ export function useDateInput(
       let keyPressed: string;
       if (
         selectedSectionIndexes.startIndex === 0 &&
-        selectedSectionIndexes.endIndex === state.sections.length - 1 &&
+        selectedSectionIndexes.endIndex === mySections.length - 1 &&
         cleanValueStr.length === 1
       ) {
         keyPressed = cleanValueStr;
       } else {
-        const prevValueStr = cleanString(
-          getValueStrFromSections(state.sections)
-        );
+        const prevValueStr = cleanString(getValueStrFromSections(mySections));
 
         let startOfDiffIndex = -1;
         let endOfDiffIndex = -1;
@@ -547,7 +536,7 @@ export function useDateInput(
           }
         }
 
-        const activeSection = state.sections[selectedSectionIndexes.startIndex];
+        const activeSection = mySections[selectedSectionIndexes.startIndex];
 
         const hasDiffOutsideOfActiveSection =
           startOfDiffIndex < activeSection.start ||
@@ -649,10 +638,7 @@ export function useDateInput(
     }
   );
 
-  const sectionOrder = useMemo(
-    () => getSectionOrder(state.sections),
-    [state.sections]
-  );
+  const sectionOrder = useMemo(() => getSectionOrder(mySections), [mySections]);
 
   const handleKeyDown = useEventCallback(
     (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -724,7 +710,7 @@ export function useDateInput(
           if (
             selectedSectionIndexes == null ||
             (selectedSectionIndexes.startIndex === 0 &&
-              selectedSectionIndexes.endIndex === state.sections.length - 1)
+              selectedSectionIndexes.endIndex === mySections.length - 1)
           ) {
             clearValue();
           } else {
@@ -749,8 +735,7 @@ export function useDateInput(
             break;
           }
 
-          const activeSection =
-            state.sections[selectedSectionIndexes.startIndex];
+          const activeSection = mySections[selectedSectionIndexes.startIndex];
           const activeDateManager = getActiveDateManager(utils, state);
 
           const newSectionValue = adjustSectionValue(
@@ -775,13 +760,6 @@ export function useDateInput(
   const inputHasFocus =
     inputRef.current && inputRef.current === getActiveElement(document);
   const shouldShowPlaceholder = !inputHasFocus && areAllSectionsEmpty;
-
-  const same = sectionsMatch(state.sections, mySections);
-  if (same) {
-    console.log('same');
-  } else {
-    console.log('theirs:', state.sections, 'ours:', mySections);
-  }
 
   return {
     inputProps: {
