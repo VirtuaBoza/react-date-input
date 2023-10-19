@@ -1,6 +1,6 @@
 {
   "name": "@abizzle/react-date-input",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "peerDependencies": {
     "react": "^17.0.0 || ^18.0.0"
   },
