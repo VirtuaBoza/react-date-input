@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import useForkRef from '../internal/useForkRef';
 import useEventCallback from '../internal/useEventCallback';
 import useEnhancedEffect from '../internal/useEnhancedEffect';
@@ -24,6 +24,7 @@ import {
   getSectionsBoundaries,
   getValueStrFromSections,
   isAndroid,
+  mapIsoDateToSectionValues,
 } from '../internal/utils';
 import { useFieldCharacterEditing } from '../internal/useFieldCharacterEditing';
 
@@ -39,6 +40,7 @@ export function useDateInput(
     onBlur,
     onChange,
     onClick,
+    onDateChange,
     onFocus,
     onKeyDown,
     onMouseUp,
@@ -47,7 +49,8 @@ export function useDateInput(
   } = params;
   const inputRef = useRef<HTMLInputElement>(null);
   const handleRef = useForkRef(ref, inputRef);
-
+  const inputHasFocus =
+    inputRef.current && inputRef.current === getActiveElement(document);
   const { formatLocale, textLocale } = getLocaleInfo(locale);
 
   const [sections, setSections] = useState(() => {
@@ -56,6 +59,17 @@ export function useDateInput(
       textLocale,
     });
   });
+  const isoDate = getIsoDateFromSections(sections);
+
+  useEffect(() => {
+    if (
+      !inputHasFocus &&
+      typeof valueProp !== 'undefined' &&
+      valueProp !== isoDate
+    ) {
+      setSections((prev) => mapIsoDateToSectionValues(valueProp, prev));
+    }
+  }, [inputHasFocus, valueProp, isoDate]);
 
   const sectionsValueBoundaries = useMemo(() => getSectionsBoundaries(), []);
 
@@ -214,6 +228,10 @@ export function useDateInput(
   const publishValue = ({ sections }: { sections: FieldSection[] }) => {
     setTempValueStrAndroid(null);
     setSections(sections);
+    const newIsoDate = getIsoDateFromSections(sections);
+    if (newIsoDate !== isoDate && onDateChange) {
+      onDateChange(newIsoDate);
+    }
   };
 
   const updateSectionValue = ({
@@ -241,8 +259,9 @@ export function useDateInput(
       newSectionValue
     );
 
-    setSections(newSections);
-    setTempValueStrAndroid(null);
+    publishValue({
+      sections: newSections,
+    });
   };
 
   const { applyCharacterEditing, resetCharacterQuery } =
@@ -294,6 +313,8 @@ export function useDateInput(
 
   const handleChange = useEventCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
+      onChange?.(event);
+
       if (readOnly) {
         return;
       }
@@ -564,9 +585,6 @@ export function useDateInput(
     }
   );
 
-  const isoDate = getIsoDateFromSections(sections);
-  const inputHasFocus =
-    inputRef.current && inputRef.current === getActiveElement(document);
   const shouldShowPlaceholder = !inputHasFocus && !isoDate;
 
   return {

@@ -9,6 +9,9 @@ export default {
     onChange: {
       action: 'onChange',
     },
+    onDateChange: {
+      action: 'onDateChange',
+    },
   },
 } satisfies Meta;
 
@@ -23,16 +26,17 @@ export const Controlled: StoryObj<typeof DateInput> = {
     placeholder: 'MM/DD/YYYY',
   },
   render: (args) => {
-    const [state, setState] = useState<any>(null);
+    const [value, setValue] = useState<string | null>('');
+    console.log({ value });
     return (
       <>
-        <DateInput {...args} value={state} onChange={setState} />
+        <DateInput {...args} value={value} onDateChange={setValue} />
         <button
           onClick={() => {
-            setState(new Date());
+            setValue(new Date().toISOString().split('T')[0]);
           }}
         >
-          Set to Now
+          Set to Today
         </button>
       </>
     );

@@ -164,6 +164,7 @@ export type UseDateInputParams = Pick<
   ComponentPropsWithRef<'input'>,
   | 'inputMode'
   | 'onBlur'
+  | 'onChange'
   | 'onClick'
   | 'onFocus'
   | 'onKeyDown'
@@ -172,14 +173,8 @@ export type UseDateInputParams = Pick<
   | 'readOnly'
   | 'ref'
 > & {
-  value?: Date;
-  defaultValue?: Date;
-  isoValue?: string;
-  defaultIsoValue?: string;
-  onChange?: (
-    date: Date | null,
-    context: { validationError: string | null }
-  ) => void;
+  value?: string | null;
+  defaultValue?: string | null;
   onDateChange?: (date: string | null) => void;
   locale?: string;
 };
