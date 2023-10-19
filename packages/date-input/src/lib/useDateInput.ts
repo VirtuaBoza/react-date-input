@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import useForkRef from '../internal/useForkRef';
 import useEventCallback from '../internal/useEventCallback';
 import useEnhancedEffect from '../internal/useEnhancedEffect';
@@ -7,31 +7,23 @@ import {
   FieldSection,
   FieldSelectedSections,
   FieldSelectedSectionsIndexes,
-  GetDefaultReferenceDateProps,
   UpdateSectionValueParams,
   UseDateInputParams,
   UseDateInputResult,
 } from '../types';
 import {
-  _getSectionsFromValue,
   addPositionPropertiesToSections,
   adjustSectionValue,
-  areDatesEqual,
   cleanString,
   createSections,
-  getActiveDateManager,
   getActiveElement,
-  getDateFromDateSections,
-  getInitialReferenceValue,
+  getDatePartIndexesForFormat,
+  getIsoDateFromSections,
   getLocaleInfo,
   getSectionOrder,
   getSectionsBoundaries,
   getValueStrFromSections,
   isAndroid,
-  mergeDateIntoReferenceDate,
-  splitFormatIntoSections,
-  updateReferenceValue,
-  validateDate,
 } from '../internal/utils';
 import { AdapterDateFns } from '../internal/AdapterDateFns';
 import { useFieldCharacterEditing } from '../internal/useFieldCharacterEditing';
@@ -67,69 +59,19 @@ export function useDateInput(
     });
   });
 
-  const firstDefaultValue = useRef(defaultValue);
-  const valueFromTheOutside = valueProp ?? firstDefaultValue.current ?? null;
-
-  const handleValueChange = useEventCallback(
-    (newValue: Date | null, context: { validationError: string | null }) => {
-      onChange?.(newValue, context);
-    }
-  );
-
   const sectionsValueBoundaries = useMemo(
     () => getSectionsBoundaries(utils),
     [utils]
   );
 
-  const getSectionsFromValue = useCallback(
-    (
-      value: Date | undefined | null,
-      fallbackSections: FieldSection[] | null = null
-    ): FieldSection[] =>
-      _getSectionsFromValue(utils, value, fallbackSections, (date) =>
-        splitFormatIntoSections(
-          utils,
-          utils.formats.keyboardDate,
-          date,
-          textLocale
-        )
-      ),
-    [utils]
-  );
-
   const [state, setState] = useState(() => {
-    const stateWithoutReferenceDate = {
-      value: valueFromTheOutside,
-      referenceValue: null,
-      tempValueStrAndroid: null as string | null,
-    };
-
-    const referenceValue = getInitialReferenceValue({
-      referenceDate: new Date(),
-      value: valueFromTheOutside,
-      utils,
-      props: {
-        // TODO
-      } as GetDefaultReferenceDateProps,
-      granularity: 3,
-    });
-
     return {
-      ...stateWithoutReferenceDate,
-      referenceValue,
+      tempValueStrAndroid: null as string | null,
     };
   });
 
-  const [selectedSections, _setSelectedSections] =
+  const [selectedSections, setSelectedSections] =
     useState<FieldSelectedSections>(null);
-  const setSelectedSections = (newSelectedSections: FieldSelectedSections) => {
-    _setSelectedSections(newSelectedSections);
-
-    setState((prevState) => ({
-      ...prevState,
-      selectedSectionQuery: null,
-    }));
-  };
 
   const selectedSectionIndexes =
     useMemo<FieldSelectedSectionsIndexes | null>(() => {
@@ -278,44 +220,12 @@ export function useDateInput(
     return addPositionPropertiesToSections(newSections);
   };
 
-  const publishValue = ({
-    value,
-    referenceValue,
-    sections,
-  }: {
-    value: any;
-    referenceValue: any;
-    sections: FieldSection[];
-  }) => {
+  const publishValue = ({ sections }: { sections: FieldSection[] }) => {
     setState((prevState) => ({
       ...prevState,
-      value,
-      referenceValue,
       tempValueStrAndroid: null,
     }));
     setMySections(sections);
-
-    if (areDatesEqual(utils, state.value, value)) {
-      return;
-    }
-
-    const context = {
-      validationError: validateDate({
-        adapter: {
-          defaultDates: {
-            maxDate: new Date('2099-12-31T00:00:00.000'),
-            minDate: new Date('1900-01-01T00:00:00.000'),
-          },
-          utils,
-        },
-        value,
-        props: {
-          // TODO
-        },
-      }),
-    };
-
-    handleValueChange(value, context);
   };
 
   const updateSectionValue = ({
@@ -338,58 +248,15 @@ export function useDateInput(
       setSelectedSections(selectedSectionIndexes.startIndex);
     }
 
-    /**
-     * 2. Try to build a valid date from the new section value
-     */
-    const activeDateManager = getActiveDateManager(utils, state);
     const newSections = setSectionValue(
       selectedSectionIndexes!.startIndex,
       newSectionValue
     );
-    const newActiveDateSections = activeDateManager.getSections(newSections);
-    const newActiveDate = getDateFromDateSections(utils, newActiveDateSections);
-
-    // let values: Pick<UseFieldState<TValue, TSection>, 'value' | 'referenceValue'>;
-    let values: { value: any; referenceValue: any };
-    let shouldPublish: boolean;
-
-    /**
-     * If the new date is valid,
-     * Then we merge the value of the modified sections into the reference date.
-     * This makes sure that we don't lose some information of the initial date (like the time on a date field).
-     */
-    if (newActiveDate != null && utils.isValid(newActiveDate)) {
-      const mergedDate = mergeDateIntoReferenceDate(
-        utils,
-        newActiveDate,
-        newActiveDateSections,
-        activeDateManager.referenceDate,
-        true
-      );
-
-      values = activeDateManager.getNewValuesFromNewActiveDate(mergedDate);
-      shouldPublish = true;
-    } else {
-      values = activeDateManager.getNewValuesFromNewActiveDate(newActiveDate);
-      shouldPublish =
-        (newActiveDate != null && !utils.isValid(newActiveDate)) !==
-        (activeDateManager.date != null &&
-          !utils.isValid(activeDateManager.date));
-    }
-
-    /**
-     * Publish or update the internal state with the new value and sections.
-     */
-    if (shouldPublish) {
-      return publishValue({ ...values, sections: newSections });
-    }
 
     setMySections(newSections);
-    return setState((prevState) => ({
-      ...prevState,
-      ...values,
+    setState({
       tempValueStrAndroid: null,
-    }));
+    });
   };
 
   const setTempAndroidValueStr = (tempValueStrAndroid: string | null) =>
@@ -406,8 +273,6 @@ export function useDateInput(
 
   const clearValue = () => {
     publishValue({
-      value: null,
-      referenceValue: state.referenceValue,
       sections: createSections({
         formatLocale,
         textLocale,
@@ -416,35 +281,22 @@ export function useDateInput(
   };
 
   const updateValueFromValueStr = (valueStr: string) => {
-    const parseDateStr = (dateStr: string, referenceDate: Date) => {
-      const format = utils.formats.keyboardDate;
-      const date = utils.parse(dateStr, format);
-      if (date == null || !utils.isValid(date)) {
-        return null;
-      }
-
-      const sections = splitFormatIntoSections(utils, format, date, textLocale);
-      return mergeDateIntoReferenceDate(
-        utils,
-        date,
-        sections,
-        referenceDate,
-        false
-      );
+    const parts = valueStr.split('/');
+    const indexes = getDatePartIndexesForFormat(formatLocale);
+    const year = parts[indexes.byType.year] || '';
+    const month = parts[indexes.byType.month] || '';
+    const day = parts[indexes.byType.day] || '';
+    const values = {
+      year,
+      month,
+      day,
     };
 
-    const newValue = parseDateStr(valueStr.trim(), state.referenceValue);
-
-    const newReferenceValue = updateReferenceValue(
-      utils,
-      newValue,
-      state.referenceValue
-    );
-    console.log({ newValue });
     publishValue({
-      value: newValue,
-      referenceValue: newReferenceValue,
-      sections: getSectionsFromValue(newValue, mySections),
+      sections: mySections.map((section) => ({
+        ...section,
+        value: values[section.type],
+      })),
     });
   };
 
@@ -453,34 +305,9 @@ export function useDateInput(
       return;
     }
 
-    const activeSection = mySections[selectedSectionIndexes.startIndex];
-    const activeDateManager = getActiveDateManager(utils, state);
-
-    const nonEmptySectionCountBefore = activeDateManager
-      .getSections(mySections)
-      .filter((section) => section.value !== '').length;
-    const hasNoOtherNonEmptySections =
-      nonEmptySectionCountBefore === (activeSection.value === '' ? 0 : 1);
-
     const newSections = setSectionValue(selectedSectionIndexes.startIndex, '');
-    const newActiveDate = hasNoOtherNonEmptySections ? null : new Date();
-    const newValues =
-      activeDateManager.getNewValuesFromNewActiveDate(newActiveDate);
 
-    if (
-      (newActiveDate != null && !utils.isValid(newActiveDate)) !==
-      (activeDateManager.date != null && !utils.isValid(activeDateManager.date))
-    ) {
-      publishValue({ ...newValues, sections: newSections });
-    } else {
-      setState((prevState) => ({
-        ...prevState,
-        ...newValues,
-        // sections: newSections,
-        tempValueStrAndroid: null,
-      }));
-      setMySections(newSections);
-    }
+    publishValue({ sections: newSections });
   };
 
   const handleChange = useEventCallback(
@@ -736,14 +563,14 @@ export function useDateInput(
           }
 
           const activeSection = mySections[selectedSectionIndexes.startIndex];
-          const activeDateManager = getActiveDateManager(utils, state);
+          const isoDate = getIsoDateFromSections(mySections);
 
           const newSectionValue = adjustSectionValue(
             utils,
             activeSection,
             event.key as AvailableAdjustKeyCode,
             sectionsValueBoundaries,
-            activeDateManager.date
+            isoDate ? new Date(isoDate) : null
           );
 
           updateSectionValue({
@@ -756,10 +583,10 @@ export function useDateInput(
     }
   );
 
-  const areAllSectionsEmpty = areDatesEqual(utils, state.value, null);
+  const isoDate = getIsoDateFromSections(mySections);
   const inputHasFocus =
     inputRef.current && inputRef.current === getActiveElement(document);
-  const shouldShowPlaceholder = !inputHasFocus && areAllSectionsEmpty;
+  const shouldShowPlaceholder = !inputHasFocus && !isoDate;
 
   return {
     inputProps: {
@@ -773,7 +600,7 @@ export function useDateInput(
       onMouseUp: handleMouseUp,
       onPaste: handlePaste,
       value: shouldShowPlaceholder ? '' : valueStr,
-      'data-iso-date': '',
+      'data-iso-date': isoDate || '',
       type: 'text',
       // https://css-tricks.com/everything-you-ever-wanted-to-know-about-inputmode/#aa-decimal
       inputMode: inputMode || 'decimal',

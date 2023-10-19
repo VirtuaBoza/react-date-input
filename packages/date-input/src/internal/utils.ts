@@ -55,144 +55,6 @@ export const getSectionVisibleValue = (
   return section.value || section.placeholder;
 };
 
-export const splitFormatIntoSections = (
-  utils: AdapterDateFns,
-  format: string,
-  date: Date | null,
-  textLocale: TextLocale
-) => {
-  let startSeparator: string = '';
-  const sections: FieldSectionWithoutPosition[] = [];
-  const now = new Date();
-
-  const commitToken = (token: string) => {
-    if (token === '') {
-      return null;
-    }
-
-    const sectionConfig = getDateSectionConfigFromFormatToken(utils, token);
-
-    const isValidDate = date != null && utils.isValid(date);
-    let sectionValue = isValidDate ? utils.formatByString(date, token) : '';
-    let maxLength: number | null = null;
-
-    maxLength =
-      sectionValue === ''
-        ? utils.formatByString(now, token).length
-        : sectionValue.length;
-
-    sections.push({
-      ...sectionConfig,
-      format: token,
-      maxLength,
-      value: sectionValue,
-      placeholder: getSectionPlaceholder(sectionConfig, textLocale),
-      endSeparator: '',
-      modified: false,
-    });
-
-    return null;
-  };
-
-  // Expand the provided format
-  let formatExpansionOverflow = 10;
-  let prevFormat = format;
-  let nextFormat = utils.expandFormat(format);
-  while (nextFormat !== prevFormat) {
-    prevFormat = nextFormat;
-    nextFormat = utils.expandFormat(prevFormat);
-    formatExpansionOverflow -= 1;
-    if (formatExpansionOverflow < 0) {
-      throw new Error(
-        'MUI: The format expansion seems to be  enter in an infinite loop. Please open an issue with the format passed to the picker component'
-      );
-    }
-  }
-  const expandedFormat = nextFormat;
-
-  // Get start/end indexes of escaped sections
-  const escapedParts = getEscapedPartsFromFormat(utils, expandedFormat);
-
-  // This RegExp test if the beginning of a string correspond to a supported token
-  const isTokenStartRegExp = new RegExp(
-    `^(${Object.keys(utils.formatTokenMap)
-      .sort((a, b) => b.length - a.length) // Sort to put longest word first
-      .join('|')})`,
-    'g' // used to get access to lastIndex state
-  );
-
-  let currentTokenValue = '';
-
-  for (let i = 0; i < expandedFormat.length; i += 1) {
-    const escapedPartOfCurrentChar = escapedParts.find(
-      (escapeIndex) => escapeIndex.start <= i && escapeIndex.end >= i
-    );
-
-    const char = expandedFormat[i];
-    const isEscapedChar = escapedPartOfCurrentChar != null;
-    const potentialToken = `${currentTokenValue}${expandedFormat.slice(i)}`;
-    const regExpMatch = isTokenStartRegExp.test(potentialToken);
-
-    if (!isEscapedChar && char.match(/([A-Za-z]+)/) && regExpMatch) {
-      currentTokenValue = potentialToken.slice(0, isTokenStartRegExp.lastIndex);
-      i += isTokenStartRegExp.lastIndex - 1;
-    } else {
-      // If we are on the opening or closing character of an escaped part of the format,
-      // Then we ignore this character.
-      const isEscapeBoundary =
-        (isEscapedChar && escapedPartOfCurrentChar?.start === i) ||
-        escapedPartOfCurrentChar?.end === i;
-
-      if (!isEscapeBoundary) {
-        commitToken(currentTokenValue);
-
-        currentTokenValue = '';
-        if (sections.length === 0) {
-          startSeparator += char;
-        } else {
-          sections[sections.length - 1].endSeparator += char;
-        }
-      }
-    }
-  }
-
-  commitToken(currentTokenValue);
-
-  return sections;
-};
-
-export const getDateSectionConfigFromFormatToken = (
-  utils: AdapterDateFns,
-  formatToken: string
-): Pick<FieldSection, 'type'> & {
-  maxLength: number | undefined;
-} => {
-  const config =
-    utils.formatTokenMap[formatToken as keyof typeof utils.formatTokenMap];
-
-  return {
-    type: config,
-    maxLength: undefined,
-  };
-};
-
-const getEscapedPartsFromFormat = (utils: AdapterDateFns, format: string) => {
-  const escapedParts: { start: number; end: number }[] = [];
-  const { start: startChar, end: endChar } = utils.escapedCharacters;
-  const regExp = new RegExp(
-    `(\\${startChar}[^\\${endChar}]*\\${endChar})+`,
-    'g'
-  );
-
-  let match: RegExpExecArray | null = null;
-  // eslint-disable-next-line no-cond-assign
-  while ((match = regExp.exec(format))) {
-    escapedParts.push({ start: match.index, end: regExp.lastIndex - 1 });
-  }
-
-  return escapedParts;
-};
-
 export const cleanLeadingZeros = (valueStr: string, size: number) => {
   let cleanValueStr = valueStr;
 
@@ -205,31 +67,6 @@ export const cleanLeadingZeros = (valueStr: string, size: number) => {
   }
 
   return cleanValueStr;
-};
-
-const getSectionPlaceholder = (
-  sectionConfig: Pick<FieldSection, 'type'>,
-  textLocale: TextLocale
-) => {
-  const repeatCount = sectionConfig.type === 'year' ? 4 : 2;
-  return localePlaceholderLetter[textLocale][sectionConfig.type].repeat(
-    repeatCount
-  );
-};
-
-export const _getSectionsFromValue = (
-  utils: AdapterDateFns,
-  date: any,
-  prevSections: FieldSection[] | null,
-  getSectionsFromDate: (date: Date) => FieldSectionWithoutPosition[]
-) => {
-  const shouldReUsePrevDateSections = !utils.isValid(date) && !!prevSections;
-
-  if (shouldReUsePrevDateSections) {
-    return prevSections;
-  }
-
-  return addPositionPropertiesToSections(getSectionsFromDate(date));
 };
 
 export const addPositionPropertiesToSections = (
@@ -292,275 +129,10 @@ export const cleanDigitSectionValue = (
   return cleanLeadingZeros(valueStr, section.maxLength!);
 };
 
-export const getActiveDateManager = (
-  utils: AdapterDateFns,
-  state: {
-    value: any;
-    referenceValue: any;
-  }
-) => ({
-  date: state.value,
-  referenceDate: state.referenceValue,
-  getSections: (sections: FieldSection[]) => sections,
-  getNewValuesFromNewActiveDate: (newActiveDate: any) => ({
-    value: newActiveDate,
-    referenceValue:
-      newActiveDate == null || !utils.isValid(newActiveDate)
-        ? state.referenceValue
-        : newActiveDate,
-  }),
-});
-
 export const SECTION_TYPE_GRANULARITY = {
   year: 1,
   month: 2,
   day: 3,
-};
-
-export const getInitialReferenceValue = ({
-  value,
-  referenceDate,
-  ...params
-}: {
-  referenceDate: Date | undefined;
-  value: any;
-  props: GetDefaultReferenceDateProps;
-  utils: AdapterDateFns;
-  granularity: number;
-}): Date => {
-  if (value != null && params.utils.isValid(value)) {
-    return value;
-  }
-
-  if (referenceDate != null) {
-    return referenceDate;
-  }
-
-  return getDefaultReferenceDate(params);
-};
-
-export const getDefaultReferenceDate = ({
-  props,
-  utils,
-  granularity,
-}: {
-  props: GetDefaultReferenceDateProps;
-  utils: AdapterDateFns;
-  granularity: number;
-}) => {
-  let referenceDate = roundDate(utils, granularity, new Date());
-
-  if (props.minDate != null && utils.isAfterDay(props.minDate, referenceDate)) {
-    referenceDate = roundDate(utils, granularity, props.minDate);
-  }
-
-  if (
-    props.maxDate != null &&
-    utils.isBeforeDay(props.maxDate, referenceDate)
-  ) {
-    referenceDate = roundDate(utils, granularity, props.maxDate);
-  }
-
-  return referenceDate;
-};
-
-const roundDate = (utils: AdapterDateFns, granularity: number, date: Date) => {
-  if (granularity === SECTION_TYPE_GRANULARITY.year) {
-    return utils.startOfYear(date);
-  }
-  if (granularity === SECTION_TYPE_GRANULARITY.month) {
-    return utils.startOfMonth(date);
-  }
-  if (granularity === SECTION_TYPE_GRANULARITY.day) {
-    return utils.startOfDay(date);
-  }
-
-  return date;
-};
-
-/**
- * Some date libraries like `dayjs` don't support parsing from date with escaped characters.
- * To make sure that the parsing works, we are building a format and a date without any separator.
- */
-export const getDateFromDateSections = (
-  utils: AdapterDateFns,
-  sections: FieldSection[]
-) => {
-  const sectionFormats: string[] = [];
-  const sectionValues: string[] = [];
-  for (let i = 0; i < sections.length; i += 1) {
-    const section = sections[i];
-
-    sectionFormats.push(section.format);
-    sectionValues.push(getSectionVisibleValue(section));
-  }
-
-  const formatWithoutSeparator = sectionFormats.join(' ');
-  const dateWithoutSeparatorStr = sectionValues.join(' ');
-
-  return utils.parse(dateWithoutSeparatorStr, formatWithoutSeparator)!;
-};
-
-const reliableSectionModificationOrder: Record<FieldSectionType, number> = {
-  year: 1,
-  month: 2,
-  day: 3,
-};
-
-export const mergeDateIntoReferenceDate = (
-  utils: AdapterDateFns,
-  dateToTransferFrom: Date,
-  sections: FieldSectionWithoutPosition[],
-  referenceDate: Date,
-  shouldLimitToEditedSections: boolean
-) =>
-  // cloning sections before sort to avoid mutating it
-  [...sections]
-    .sort(
-      (a, b) =>
-        reliableSectionModificationOrder[a.type] -
-        reliableSectionModificationOrder[b.type]
-    )
-    .reduce((mergedDate, section) => {
-      if (!shouldLimitToEditedSections || section.modified) {
-        return transferDateSectionValue(
-          utils,
-          section,
-          dateToTransferFrom,
-          mergedDate
-        );
-      }
-
-      return mergedDate;
-    }, referenceDate);
-
-const transferDateSectionValue = (
-  utils: AdapterDateFns,
-  section: FieldSectionWithoutPosition,
-  dateToTransferFrom: Date,
-  dateToTransferTo: Date
-) => {
-  switch (section.type) {
-    case 'year': {
-      return utils.setYear(dateToTransferTo, utils.getYear(dateToTransferFrom));
-    }
-
-    case 'month': {
-      return utils.setMonth(
-        dateToTransferTo,
-        utils.getMonth(dateToTransferFrom)
-      );
-    }
-
-    case 'day': {
-      return utils.setDate(dateToTransferTo, utils.getDate(dateToTransferFrom));
-    }
-
-    default: {
-      return dateToTransferTo;
-    }
-  }
-};
-
-export const areDatesEqual = (
-  utils: AdapterDateFns,
-  a: Date | null,
-  b: Date | null
-) => {
-  if (!utils.isValid(a) && a != null && !utils.isValid(b) && b != null) {
-    return true;
-  }
-
-  return utils.isEqual(a, b);
-};
-
-export const validateDate = ({
-  props,
-  value,
-  adapter,
-}: {
-  props: {
-    shouldDisableDate?: (value: any) => any;
-    shouldDisableMonth?: (value: any) => any;
-    shouldDisableYear?: (value: any) => any;
-    disablePast?: boolean;
-    disableFuture?: boolean;
-    minDate?: any;
-    maxDate?: any;
-  };
-  value: any;
-  adapter: {
-    utils: AdapterDateFns;
-    defaultDates: {
-      minDate: Date;
-      maxDate: Date;
-    };
-  };
-}) => {
-  if (value === null) {
-    return null;
-  }
-
-  const {
-    shouldDisableDate,
-    shouldDisableMonth,
-    shouldDisableYear,
-    disablePast,
-    disableFuture,
-  } = props;
-
-  const now = new Date();
-  const minDate = applyDefaultDate(
-    adapter.utils,
-    props.minDate,
-    adapter.defaultDates.minDate
-  );
-  const maxDate = applyDefaultDate(
-    adapter.utils,
-    props.maxDate,
-    adapter.defaultDates.maxDate
-  );
-
-  switch (true) {
-    case !adapter.utils.isValid(value):
-      return 'invalidDate';
-
-    case Boolean(shouldDisableDate && shouldDisableDate(value)):
-      return 'shouldDisableDate';
-
-    case Boolean(shouldDisableMonth && shouldDisableMonth(value)):
-      return 'shouldDisableMonth';
-
-    case Boolean(shouldDisableYear && shouldDisableYear(value)):
-      return 'shouldDisableYear';
-
-    case Boolean(disableFuture && adapter.utils.isAfterDay(value, now)):
-      return 'disableFuture';
-
-    case Boolean(disablePast && adapter.utils.isBeforeDay(value, now)):
-      return 'disablePast';
-
-    case Boolean(minDate && adapter.utils.isBeforeDay(value, minDate)):
-      return 'minDate';
-
-    case Boolean(maxDate && adapter.utils.isAfterDay(value, maxDate)):
-      return 'maxDate';
-
-    default:
-      return null;
-  }
-};
-
-export const applyDefaultDate = (
-  utils: AdapterDateFns,
-  value: Date | null | undefined,
-  defaultValue: Date
-): Date => {
-  if (value == null || !utils.isValid(value)) {
-    return defaultValue;
-  }
-
-  return value;
 };
 
 export const getSectionsBoundaries = (utils: AdapterDateFns) => {
@@ -588,7 +160,7 @@ export const getSectionsBoundaries = (utils: AdapterDateFns) => {
       minimum: 1,
       maximum: 12,
     }),
-    day: ({ currentDate }: { currentDate: any }) => ({
+    day: ({ currentDate }: { currentDate: Date | null }) => ({
       minimum: 1,
       maximum:
         currentDate != null && utils.isValid(currentDate)
@@ -597,12 +169,6 @@ export const getSectionsBoundaries = (utils: AdapterDateFns) => {
     }),
   };
 };
-
-export const updateReferenceValue = (
-  utils: AdapterDateFns,
-  value: any,
-  prevReferenceValue: any
-) => (value == null || !utils.isValid(value) ? prevReferenceValue : value);
 
 export const isAndroid = () =>
   navigator.userAgent.toLowerCase().indexOf('android') > -1;
@@ -842,19 +408,28 @@ export function isValidIsoDate(isoDate: unknown): isoDate is string {
   return false;
 }
 
-// export function sectionsMatch(
-//   sectionsA: FieldSection[],
-//   sectionsB: FieldSection[]
-// ) {
-//   if (sectionsA.length !== sectionsB.length) {
-//     return false;
-//   }
-//   let same = true;
-//   sectionsA.forEach((sectionA, index) => {
-//     const sectionB = sectionsB[index];
-//     Object.entries(sectionA).forEach(([key, value]) => {
-//       same = same && value === sectionB[key as keyof typeof sectionB];
-//     });
-//   });
-//   return same;
-// }
+export function getIsoDateFromSections(
+  sections: FieldSection[]
+): string | null {
+  let year = '';
+  let month = '';
+  let day = '';
+  sections.forEach((section) => {
+    switch (section.type) {
+      case 'day':
+        day = section.value;
+        break;
+      case 'month':
+        month = section.value;
+        break;
+      case 'year':
+        year = section.value;
+        break;
+    }
+  });
+  const draft = `${year}-${month}-${day}`;
+  if (isValidIsoDate(draft)) {
+    return draft;
+  }
+  return null;
+}

@@ -1,22 +1,9 @@
 /* eslint-disable class-methods-use-this */
 import addMonths from 'date-fns/addMonths';
-import endOfDay from 'date-fns/endOfDay';
 import dateFnsFormat from 'date-fns/format';
-import getDate from 'date-fns/getDate';
 import getDaysInMonth from 'date-fns/getDaysInMonth';
-import getMonth from 'date-fns/getMonth';
-import getYear from 'date-fns/getYear';
-import isAfter from 'date-fns/isAfter';
-import isBefore from 'date-fns/isBefore';
-import isEqual from 'date-fns/isEqual';
 import isValid from 'date-fns/isValid';
 import dateFnsParse from 'date-fns/parse';
-import setDate from 'date-fns/setDate';
-import setMonth from 'date-fns/setMonth';
-import setYear from 'date-fns/setYear';
-import startOfDay from 'date-fns/startOfDay';
-import startOfMonth from 'date-fns/startOfMonth';
-import startOfWeek from 'date-fns/startOfWeek';
 import startOfYear from 'date-fns/startOfYear';
 import defaultLocale from 'date-fns/locale/en-US';
 // @ts-ignore
@@ -120,68 +107,12 @@ export class AdapterDateFns {
     return dateFnsFormat(value, formatString, { locale: this.locale });
   };
 
-  public isEqual = (value: any, comparing: any) => {
-    if (value === null && comparing === null) {
-      return true;
-    }
-
-    return isEqual(value, comparing);
-  };
-
-  public isAfterDay = (value: Date, comparing: Date) => {
-    return isAfter(value, endOfDay(comparing));
-  };
-
-  public isBefore = (value: Date, comparing: Date) => {
-    return isBefore(value, comparing);
-  };
-
-  public isBeforeDay = (value: Date, comparing: Date) => {
-    return isBefore(value, startOfDay(comparing));
-  };
-
   public startOfYear = (value: Date) => {
     return startOfYear(value);
   };
 
-  public startOfMonth = (value: Date) => {
-    return startOfMonth(value);
-  };
-
-  public startOfWeek = (value: Date) => {
-    return startOfWeek(value, { locale: this.locale });
-  };
-
-  public startOfDay = (value: Date) => {
-    return startOfDay(value);
-  };
-
   public addMonths = (value: Date, amount: number) => {
     return addMonths(value, amount);
-  };
-
-  public getYear = (value: Date) => {
-    return getYear(value);
-  };
-
-  public getMonth = (value: Date) => {
-    return getMonth(value);
-  };
-
-  public getDate = (value: Date) => {
-    return getDate(value);
-  };
-
-  public setYear = (value: Date, year: number) => {
-    return setYear(value, year);
-  };
-
-  public setMonth = (value: Date, month: number) => {
-    return setMonth(value, month);
-  };
-
-  public setDate = (value: Date, date: number) => {
-    return setDate(value, date);
   };
 
   public getDaysInMonth = (value: Date) => {
