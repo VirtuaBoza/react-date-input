@@ -15,6 +15,7 @@ import {
   addPositionPropertiesToSections,
   adjustSectionValue,
   cleanString,
+  createDateStrForInputFromSections,
   createSections,
   getActiveElement,
   getDatePartIndexesForFormat,
@@ -22,7 +23,6 @@ import {
   getLocaleInfo,
   getSectionOrder,
   getSectionsBoundaries,
-  getValueStrFromSections,
   isAndroid,
   mapIsoDateToSectionValues,
 } from '../internal/utils';
@@ -127,7 +127,7 @@ export function useDateInput(
     }, [selectedSections, sections]);
 
   const valueStr = useMemo(
-    () => tempValueStrAndroid ?? getValueStrFromSections(sections),
+    () => tempValueStrAndroid ?? createDateStrForInputFromSections(sections),
     [sections, tempValueStrAndroid]
   );
 
@@ -362,7 +362,9 @@ export function useDateInput(
       ) {
         keyPressed = cleanValueStr;
       } else {
-        const prevValueStr = cleanString(getValueStrFromSections(sections));
+        const prevValueStr = cleanString(
+          createDateStrForInputFromSections(sections)
+        );
 
         let startOfDiffIndex = -1;
         let endOfDiffIndex = -1;

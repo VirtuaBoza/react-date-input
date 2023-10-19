@@ -4,7 +4,8 @@
   "license": "MIT",
   "scripts": {
     "build": "nx run react-date-input:build",
-    "start": "nx run react-date-input:storybook"
+    "start": "nx run react-date-input:storybook",
+    "test": "nx run react-date-input:test"
   },
   "private": true,
   "devDependencies": {

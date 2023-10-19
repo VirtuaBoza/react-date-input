@@ -30,10 +30,6 @@ export const getActiveElement = (
   return activeEl;
 };
 
-export function getValueStrFromSections(sections: FieldSection[]) {
-  return createDateStrForInputFromSections(sections);
-}
-
 export const createDateStrForInputFromSections = (sections: FieldSection[]) => {
   const formattedSections = sections.map((section) => {
     const dateValue = getSectionVisibleValue(section);
