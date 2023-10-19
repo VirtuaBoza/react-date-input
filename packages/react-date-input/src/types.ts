@@ -1,5 +1,5 @@
 import { TextLocale } from './internal/localeText';
-import { ComponentProps, ComponentPropsWithRef } from 'react';
+import { ComponentPropsWithRef } from 'react';
 
 export type FieldSelectedSectionsIndexes = {
   startIndex: number;
@@ -100,11 +100,6 @@ export type UpdateSectionValueParams = {
   shouldGoToNextSection: boolean;
 };
 
-export interface GetDefaultReferenceDateProps {
-  maxDate?: Date;
-  minDate?: Date;
-}
-
 export type AvailableAdjustKeyCode =
   | 'ArrowUp'
   | 'ArrowDown'
@@ -140,20 +135,6 @@ export type SectionNeighbors = {
     rightIndex: number | null;
   };
 };
-
-export type ChangeData =
-  | {
-      isoValue: null | string;
-      validationError: null;
-    }
-  | {
-      isoValue: null;
-      validationError: 'invalidDate';
-    }
-  | {
-      isoValue: string;
-      validationError: 'minDate' | 'maxDate';
-    };
 
 export type LocaleInfo = {
   formatLocale: string;

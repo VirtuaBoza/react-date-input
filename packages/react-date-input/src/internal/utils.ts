@@ -6,10 +6,8 @@ import {
 import {
   AvailableAdjustKeyCode,
   FieldSection,
-  FieldSectionType,
   FieldSectionWithoutPosition,
   FieldSectionsValueBoundaries,
-  GetDefaultReferenceDateProps,
   LocaleInfo,
   SectionNeighbors,
   SectionOrdering,
