@@ -105,7 +105,9 @@ export const useFieldCharacterEditing = ({
 
   const applyQuery = (
     { keyPressed, sectionIndex }: ApplyCharacterEditingParams,
-    getFirstSectionValueMatchingWithQuery: QueryApplier,
+    getFirstSectionValueMatchingWithQuery: QueryApplier = () => ({
+      saveQuery: false,
+    }),
     isValidQueryValue?: (queryValue: string) => boolean
   ): ReturnType<CharacterEditingApplier> => {
     const cleanKeyPressed = keyPressed.toLowerCase();
@@ -159,14 +161,6 @@ export const useFieldCharacterEditing = ({
     return queryResponse;
   };
 
-  const applyLetterEditing: CharacterEditingApplier = (params) => {
-    const getFirstSectionValueMatchingWithQuery: QueryApplier = () => {
-      return { saveQuery: false };
-    };
-
-    return applyQuery(params, getFirstSectionValueMatchingWithQuery);
-  };
-
   const applyNumericEditing: CharacterEditingApplier = (params) => {
     const getNewSectionValue = (
       queryValue: string,
@@ -175,7 +169,6 @@ export const useFieldCharacterEditing = ({
       const queryValueNumber = Number(`${queryValue}`);
       const sectionBoundaries = sectionsValueBoundaries[section.type]({
         currentDate: null,
-        format: section.format,
       });
 
       if (queryValueNumber > sectionBoundaries.maximum) {
@@ -217,7 +210,7 @@ export const useFieldCharacterEditing = ({
       const isNumericEditing = !Number.isNaN(Number(params.keyPressed));
       const response = isNumericEditing
         ? applyNumericEditing(params)
-        : applyLetterEditing(params);
+        : applyQuery(params);
       if (response == null) {
         setTempAndroidValueStr(null);
       } else {

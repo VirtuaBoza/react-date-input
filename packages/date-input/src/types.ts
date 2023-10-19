@@ -20,7 +20,7 @@ export type FieldSelectedSections =
 
 export type FieldSectionWithoutPosition = Omit<
   FieldSection,
-  'start' | 'end' | 'startInInput' | 'endInInput'
+  'start' | 'end' | 'endInInput'
 >;
 
 export type FieldSectionType = 'year' | 'month' | 'day';
@@ -68,42 +68,25 @@ export interface FieldSection {
    */
   end: number;
   /**
-   * Start index of the section value in the input.
-   * Takes into account invisible unicode characters such as \u2069 but does not include them
-   */
-  startInInput: number;
-  /**
    * End index of the section value in the input.
    * Takes into account invisible unicode characters such as \u2069 but does not include them
    */
   endInInput: number;
   /**
-   * Separator displayed before the value of the section in the input.
-   * If it contains escaped characters, then it must not have the escaping characters.
-   * For example, on Day.js, the `year` section of the format `YYYY [year]` has an end separator equal to `year` not `[year]`
-   */
-  startSeparator: string;
-  /**
    * Separator displayed after the value of the section in the input.
-   * If it contains escaped characters, then it must not have the escaping characters.
-   * For example, on Day.js, the `year` section of the format `[year] YYYY` has a start separator equal to `[year]`
    */
   endSeparator: string;
 }
 
-export type FieldSectionValueBoundaries<
-  TDate,
-  SectionType extends FieldSectionType
-> = {
+export type FieldSectionValueBoundaries = {
   minimum: number;
   maximum: number;
 };
 
 export type FieldSectionsValueBoundaries = {
-  [SectionType in FieldSectionType]: (params: {
-    currentDate: Date | null;
-    format: string;
-  }) => FieldSectionValueBoundaries<Date, SectionType>;
+  year: () => FieldSectionValueBoundaries;
+  month: () => FieldSectionValueBoundaries;
+  day: (params: { currentDate: Date | null }) => FieldSectionValueBoundaries;
 };
 
 export type UpdateSectionValueParams = {
@@ -121,8 +104,6 @@ export interface GetDefaultReferenceDateProps {
   maxDate?: Date;
   minDate?: Date;
 }
-
-export type FieldValueType = 'date';
 
 export type AvailableAdjustKeyCode =
   | 'ArrowUp'
@@ -193,10 +174,13 @@ export type UseDateInputParams = Pick<
 > & {
   value?: Date;
   defaultValue?: Date;
+  isoValue?: string;
+  defaultIsoValue?: string;
   onChange?: (
     date: Date | null,
     context: { validationError: string | null }
   ) => void;
+  onDateChange?: (date: string | null) => void;
   locale?: string;
   max?: string;
   min?: string;
@@ -217,5 +201,7 @@ export type UseDateInputResult = {
     | 'ref'
     | 'type'
     | 'value'
-  >;
+  > & {
+    'data-iso-date': string;
+  };
 };

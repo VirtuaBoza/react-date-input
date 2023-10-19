@@ -10,7 +10,6 @@ import {
   FieldSectionType,
   FieldSectionWithoutPosition,
   FieldSectionsValueBoundaries,
-  FieldValueType,
   GetDefaultReferenceDateProps,
   LocaleInfo,
   SectionNeighbors,
@@ -42,7 +41,7 @@ export const createDateStrForInputFromSections = (sections: FieldSection[]) => {
   const formattedSections = sections.map((section) => {
     const dateValue = getSectionVisibleValue(section);
 
-    return `${section.startSeparator}${dateValue}${section.endSeparator}`;
+    return `${dateValue}${section.endSeparator}`;
   });
 
   const dateStr = formattedSections.join('');
@@ -88,7 +87,6 @@ export const splitFormatIntoSections = (
       maxLength,
       value: sectionValue,
       placeholder: getSectionPlaceholder(sectionConfig, textLocale),
-      startSeparator: sections.length === 0 ? startSeparator : '',
       endSeparator: '',
       modified: false,
     });
@@ -244,7 +242,7 @@ export const addPositionPropertiesToSections = (
   for (let i = 0; i < sections.length; i += 1) {
     const section = sections[i];
     const renderedValue = getSectionVisibleValue(section);
-    const sectionStr = `${section.startSeparator}${renderedValue}${section.endSeparator}`;
+    const sectionStr = `${renderedValue}${section.endSeparator}`;
 
     const sectionLength = cleanString(sectionStr).length;
     const sectionLengthInInput = sectionStr.length;
@@ -252,9 +250,7 @@ export const addPositionPropertiesToSections = (
     // The ...InInput values consider the unicode characters but do include them in their indexes
     const cleanedValue = cleanString(renderedValue);
     const startInInput =
-      positionInInput +
-      renderedValue.indexOf(cleanedValue[0]) +
-      section.startSeparator.length;
+      positionInInput + renderedValue.indexOf(cleanedValue[0]);
     const endInInput = startInInput + cleanedValue.length;
 
     newSections.push({
@@ -643,7 +639,6 @@ export const adjustSectionValue = (
   const adjustDigitSection = () => {
     const sectionBoundaries = sectionsValueBoundaries[section.type]({
       currentDate: activeDate,
-      format: section.format,
     });
 
     const getCleanValue = (value: number) =>

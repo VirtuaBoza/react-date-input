@@ -182,11 +182,10 @@ export function useDateInput(
     const firstSelectedSection =
       state.sections[selectedSectionIndexes.startIndex];
     const lastSelectedSection = state.sections[selectedSectionIndexes.endIndex];
-    let selectionStart = firstSelectedSection.startInInput;
+    let selectionStart = firstSelectedSection.start;
     let selectionEnd = lastSelectedSection.endInInput;
 
     if (selectedSectionIndexes.shouldSelectBoundarySelectors) {
-      selectionStart -= firstSelectedSection.startSeparator.length;
       selectionEnd += lastSelectedSection.endSeparator.length;
     }
 
@@ -214,7 +213,7 @@ export function useDateInput(
     }
     const browserStartIndex = inputRef.current!.selectionStart ?? 0;
     let nextSectionIndex: number;
-    if (browserStartIndex <= state.sections[0].startInInput) {
+    if (browserStartIndex <= state.sections[0].start) {
       // Special case if browser index is in invisible characters at the beginning
       nextSectionIndex = 1;
     } else if (
@@ -224,9 +223,7 @@ export function useDateInput(
       nextSectionIndex = 1;
     } else {
       nextSectionIndex = state.sections.findIndex(
-        (section) =>
-          section.startInInput - section.startSeparator.length >
-          browserStartIndex
+        (section) => section.start > browserStartIndex
       );
     }
     const sectionIndex =
@@ -560,8 +557,7 @@ export function useDateInput(
           cleanString(activeSection.endSeparator || '').length;
 
         keyPressed = cleanValueStr.slice(
-          activeSection.start +
-            cleanString(activeSection.startSeparator || '').length,
+          activeSection.start,
           activeSectionEndRelativeToNewValue
         );
       }
@@ -783,6 +779,7 @@ export function useDateInput(
       onMouseUp: handleMouseUp,
       onPaste: handlePaste,
       value: shouldShowPlaceholder ? '' : valueStr,
+      'data-iso-date': '',
       type: 'text',
       // https://css-tricks.com/everything-you-ever-wanted-to-know-about-inputmode/#aa-decimal
       inputMode: inputMode || 'decimal',
