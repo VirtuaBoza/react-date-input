@@ -122,12 +122,6 @@ export const cleanDigitSectionValue = (
   return cleanLeadingZeros(valueStr, section.maxLength!);
 };
 
-export const SECTION_TYPE_GRANULARITY = {
-  year: 1,
-  month: 2,
-  day: 3,
-};
-
 export const getSectionsBoundaries = () => {
   const today = new Date();
 
