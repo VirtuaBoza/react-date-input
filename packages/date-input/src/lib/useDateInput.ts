@@ -54,10 +54,11 @@ export function useDateInput(
   const { formatLocale, textLocale } = getLocaleInfo(locale);
 
   const [sections, setSections] = useState(() => {
-    return createSections({
+    const sections = createSections({
       formatLocale,
       textLocale,
     });
+    return mapIsoDateToSectionValues(valueProp || defaultValue, sections);
   });
   const isoDate = getIsoDateFromSections(sections);
 

@@ -371,7 +371,7 @@ export function createSections({
 }
 
 export function mapIsoDateToSectionValues(
-  isoDate: string | null,
+  isoDate: unknown,
   sections: FieldSection[]
 ): FieldSection[] {
   if (isValidIsoDate(isoDate)) {
