@@ -602,8 +602,7 @@ export function useDateInput(
       value: shouldShowPlaceholder ? '' : valueStr,
       'data-iso-date': isoDate || '',
       type: 'text',
-      // https://css-tricks.com/everything-you-ever-wanted-to-know-about-inputmode/#aa-decimal
-      inputMode: inputMode || 'decimal',
+      inputMode: inputMode || 'numeric',
     },
   };
 }
