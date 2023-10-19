@@ -1,10 +1,10 @@
 {
-  "name": "@date-input/source",
+  "name": "@react-date-input/source",
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "build": "nx run date-input:build",
-    "start": "nx run date-input:storybook"
+    "build": "nx run react-date-input:build",
+    "start": "nx run react-date-input:storybook"
   },
   "private": true,
   "devDependencies": {

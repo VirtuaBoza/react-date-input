@@ -1,17 +1,17 @@
 {
-  "name": "date-input",
+  "name": "react-date-input",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "packages/date-input/src",
+  "sourceRoot": "packages/react-date-input/src",
   "projectType": "library",
   "targets": {
     "build": {
       "executor": "@nx/js:tsc",
       "outputs": ["{options.outputPath}"],
       "options": {
-        "outputPath": "dist/packages/date-input",
-        "main": "packages/date-input/src/index.ts",
-        "tsConfig": "packages/date-input/tsconfig.lib.json",
-        "assets": ["packages/date-input/*.md"]
+        "outputPath": "dist/packages/react-date-input",
+        "main": "packages/react-date-input/src/index.ts",
+        "tsConfig": "packages/react-date-input/tsconfig.lib.json",
+        "assets": ["packages/react-date-input/*.md"]
       }
     },
     "publish": {
@@ -23,8 +23,8 @@
       "outputs": ["{options.outputFile}"],
       "options": {
         "lintFilePatterns": [
-          "packages/date-input/**/*.ts",
-          "packages/date-input/package.json"
+          "packages/react-date-input/**/*.ts",
+          "packages/react-date-input/package.json"
         ]
       }
     },
@@ -32,7 +32,7 @@
       "executor": "@nx/jest:jest",
       "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
       "options": {
-        "jestConfig": "packages/date-input/jest.config.ts",
+        "jestConfig": "packages/react-date-input/jest.config.ts",
         "passWithNoTests": true
       },
       "configurations": {
@@ -46,7 +46,7 @@
       "executor": "@nx/storybook:storybook",
       "options": {
         "port": 4400,
-        "configDir": "packages/date-input/.storybook"
+        "configDir": "packages/react-date-input/.storybook"
       },
       "configurations": {
         "ci": {
@@ -59,7 +59,7 @@
       "outputs": ["{options.outputDir}"],
       "options": {
         "outputDir": "dist/storybook/date-input",
-        "configDir": "packages/date-input/.storybook"
+        "configDir": "packages/react-date-input/.storybook"
       },
       "configurations": {
         "ci": {

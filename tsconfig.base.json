@@ -14,7 +14,7 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@abizzle/date-input": ["packages/date-input/src/index.ts"]
+      "@abizzle/react-date-input": ["packages/react-date-input/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

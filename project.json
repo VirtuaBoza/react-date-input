@@ -1,5 +1,5 @@
 {
-  "name": "@date-input/source",
+  "name": "@react-date-input/source",
   "$schema": "node_modules/nx/schemas/project-schema.json",
   "targets": {
     "local-registry": {
