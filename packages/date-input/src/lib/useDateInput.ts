@@ -52,7 +52,7 @@ export function useDateInput(
 
   const { formatLocale, textLocale } = getLocaleInfo(locale);
 
-  const [mySections, setMySections] = useState(() => {
+  const [sections, setSections] = useState(() => {
     return createSections({
       formatLocale,
       textLocale,
@@ -82,7 +82,7 @@ export function useDateInput(
       if (selectedSections === 'all') {
         return {
           startIndex: 0,
-          endIndex: mySections.length - 1,
+          endIndex: sections.length - 1,
           shouldSelectBoundarySelectors: true,
         };
       }
@@ -92,7 +92,7 @@ export function useDateInput(
       }
 
       if (typeof selectedSections === 'string') {
-        const selectedSectionIndex = mySections.findIndex(
+        const selectedSectionIndex = sections.findIndex(
           (section) => section.type === selectedSections
         );
 
@@ -103,11 +103,11 @@ export function useDateInput(
       }
 
       return selectedSections;
-    }, [selectedSections, mySections]);
+    }, [selectedSections, sections]);
 
   const valueStr = useMemo(
-    () => state.tempValueStrAndroid ?? getValueStrFromSections(mySections),
-    [mySections, state.tempValueStrAndroid]
+    () => state.tempValueStrAndroid ?? getValueStrFromSections(sections),
+    [sections, state.tempValueStrAndroid]
   );
 
   useEnhancedEffect(() => {
@@ -124,8 +124,8 @@ export function useDateInput(
       return;
     }
 
-    const firstSelectedSection = mySections[selectedSectionIndexes.startIndex];
-    const lastSelectedSection = mySections[selectedSectionIndexes.endIndex];
+    const firstSelectedSection = sections[selectedSectionIndexes.startIndex];
+    const lastSelectedSection = sections[selectedSectionIndexes.endIndex];
     let selectionStart = firstSelectedSection.start;
     let selectionEnd = lastSelectedSection.endInInput;
 
@@ -157,21 +157,19 @@ export function useDateInput(
     }
     const browserStartIndex = inputRef.current!.selectionStart ?? 0;
     let nextSectionIndex: number;
-    if (browserStartIndex <= mySections[0].start) {
+    if (browserStartIndex <= sections[0].start) {
       // Special case if browser index is in invisible characters at the beginning
       nextSectionIndex = 1;
-    } else if (
-      browserStartIndex >= mySections[mySections.length - 1].endInInput
-    ) {
+    } else if (browserStartIndex >= sections[sections.length - 1].endInInput) {
       // If the click is after the last character of the input, then we want to select the 1st section.
       nextSectionIndex = 1;
     } else {
-      nextSectionIndex = mySections.findIndex(
+      nextSectionIndex = sections.findIndex(
         (section) => section.start > browserStartIndex
       );
     }
     const sectionIndex =
-      nextSectionIndex === -1 ? mySections.length - 1 : nextSectionIndex - 1;
+      nextSectionIndex === -1 ? sections.length - 1 : nextSectionIndex - 1;
     setSelectedSections(sectionIndex);
   };
 
@@ -209,7 +207,7 @@ export function useDateInput(
   );
 
   const setSectionValue = (sectionIndex: number, newSectionValue: string) => {
-    const newSections = [...mySections];
+    const newSections = [...sections];
 
     newSections[sectionIndex] = {
       ...newSections[sectionIndex],
@@ -225,7 +223,7 @@ export function useDateInput(
       ...prevState,
       tempValueStrAndroid: null,
     }));
-    setMySections(sections);
+    setSections(sections);
   };
 
   const updateSectionValue = ({
@@ -238,7 +236,7 @@ export function useDateInput(
     if (
       shouldGoToNextSection &&
       selectedSectionIndexes &&
-      selectedSectionIndexes.startIndex < mySections.length - 1
+      selectedSectionIndexes.startIndex < sections.length - 1
     ) {
       setSelectedSections(selectedSectionIndexes.startIndex + 1);
     } else if (
@@ -253,7 +251,7 @@ export function useDateInput(
       newSectionValue
     );
 
-    setMySections(newSections);
+    setSections(newSections);
     setState({
       tempValueStrAndroid: null,
     });
@@ -264,7 +262,7 @@ export function useDateInput(
 
   const { applyCharacterEditing, resetCharacterQuery } =
     useFieldCharacterEditing({
-      sections: mySections,
+      sections: sections,
       updateSectionValue,
       sectionsValueBoundaries,
       setTempAndroidValueStr,
@@ -293,7 +291,7 @@ export function useDateInput(
     };
 
     publishValue({
-      sections: mySections.map((section) => ({
+      sections: sections.map((section) => ({
         ...section,
         value: values[section.type],
       })),
@@ -340,12 +338,12 @@ export function useDateInput(
       let keyPressed: string;
       if (
         selectedSectionIndexes.startIndex === 0 &&
-        selectedSectionIndexes.endIndex === mySections.length - 1 &&
+        selectedSectionIndexes.endIndex === sections.length - 1 &&
         cleanValueStr.length === 1
       ) {
         keyPressed = cleanValueStr;
       } else {
-        const prevValueStr = cleanString(getValueStrFromSections(mySections));
+        const prevValueStr = cleanString(getValueStrFromSections(sections));
 
         let startOfDiffIndex = -1;
         let endOfDiffIndex = -1;
@@ -363,7 +361,7 @@ export function useDateInput(
           }
         }
 
-        const activeSection = mySections[selectedSectionIndexes.startIndex];
+        const activeSection = sections[selectedSectionIndexes.startIndex];
 
         const hasDiffOutsideOfActiveSection =
           startOfDiffIndex < activeSection.start ||
@@ -465,7 +463,7 @@ export function useDateInput(
     }
   );
 
-  const sectionOrder = useMemo(() => getSectionOrder(mySections), [mySections]);
+  const sectionOrder = useMemo(() => getSectionOrder(sections), [sections]);
 
   const handleKeyDown = useEventCallback(
     (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -537,7 +535,7 @@ export function useDateInput(
           if (
             selectedSectionIndexes == null ||
             (selectedSectionIndexes.startIndex === 0 &&
-              selectedSectionIndexes.endIndex === mySections.length - 1)
+              selectedSectionIndexes.endIndex === sections.length - 1)
           ) {
             clearValue();
           } else {
@@ -562,8 +560,8 @@ export function useDateInput(
             break;
           }
 
-          const activeSection = mySections[selectedSectionIndexes.startIndex];
-          const isoDate = getIsoDateFromSections(mySections);
+          const activeSection = sections[selectedSectionIndexes.startIndex];
+          const isoDate = getIsoDateFromSections(sections);
 
           const newSectionValue = adjustSectionValue(
             utils,
@@ -583,7 +581,7 @@ export function useDateInput(
     }
   );
 
-  const isoDate = getIsoDateFromSections(mySections);
+  const isoDate = getIsoDateFromSections(sections);
   const inputHasFocus =
     inputRef.current && inputRef.current === getActiveElement(document);
   const shouldShowPlaceholder = !inputHasFocus && !isoDate;
