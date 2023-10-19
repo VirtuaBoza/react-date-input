@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { AdapterDateFns } from './AdapterDateFns';
 import {
   FieldSection,
   FieldSectionType,
@@ -67,12 +66,10 @@ const isQueryResponseWithoutValue = (
  */
 export const useFieldCharacterEditing = ({
   sections,
-  utils,
   updateSectionValue,
   sectionsValueBoundaries,
   setTempAndroidValueStr,
 }: {
-  utils: AdapterDateFns;
   sections: FieldSection[];
   setTempAndroidValueStr: (newValue: string | null) => void;
   sectionsValueBoundaries: FieldSectionsValueBoundaries;

@@ -1,4 +1,3 @@
-import { AdapterDateFns } from './AdapterDateFns';
 import {
   DEFAULT_TEXT_LOCALE,
   TextLocale,
@@ -107,13 +106,13 @@ export const addPositionPropertiesToSections = (
 export const cleanString = (dirtyString: string) =>
   dirtyString.replace(/[\u2066\u2067\u2068\u2069]/g, '');
 
-export const getMonthsInYear = (utils: AdapterDateFns, year: Date) => {
-  const firstMonth = utils.startOfYear(year);
+export const getMonthsInYear = (year: Date) => {
+  const firstMonth = startOfYear(year);
   const months = [firstMonth];
 
   while (months.length < 12) {
     const prevMonth = months[months.length - 1];
-    months.push(utils.addMonths(prevMonth, 1));
+    months.push(addMonths(prevMonth, 1));
   }
 
   return months;
@@ -135,12 +134,12 @@ export const SECTION_TYPE_GRANULARITY = {
   day: 3,
 };
 
-export const getSectionsBoundaries = (utils: AdapterDateFns) => {
+export const getSectionsBoundaries = () => {
   const today = new Date();
 
-  const { maxDaysInMonth } = getMonthsInYear(utils, today).reduce(
+  const { maxDaysInMonth } = getMonthsInYear(today).reduce(
     (acc, month) => {
-      const daysInMonth = utils.getDaysInMonth(month);
+      const daysInMonth = getDaysInMonth(month);
 
       if (daysInMonth > acc.maxDaysInMonth) {
         return { maxDaysInMonth: daysInMonth };
@@ -163,8 +162,8 @@ export const getSectionsBoundaries = (utils: AdapterDateFns) => {
     day: ({ currentDate }: { currentDate: Date | null }) => ({
       minimum: 1,
       maximum:
-        currentDate != null && utils.isValid(currentDate)
-          ? utils.getDaysInMonth(currentDate)
+        currentDate != null && !isNaN(currentDate.getTime())
+          ? getDaysInMonth(currentDate)
           : maxDaysInMonth,
     }),
   };
@@ -174,7 +173,6 @@ export const isAndroid = () =>
   navigator.userAgent.toLowerCase().indexOf('android') > -1;
 
 export const adjustSectionValue = (
-  utils: AdapterDateFns,
   section: FieldSection,
   keyCode: AvailableAdjustKeyCode,
   sectionsValueBoundaries: FieldSectionsValueBoundaries,
@@ -201,7 +199,9 @@ export const adjustSectionValue = (
 
     if (shouldSetAbsolute) {
       if (section.type === 'year' && !isEnd && !isStart) {
-        return utils.formatByString(new Date(), section.format);
+        return new Intl.DateTimeFormat('en-US', {
+          year: 'numeric',
+        }).format(new Date());
       }
 
       if (delta > 0 || isStart) {
@@ -433,3 +433,33 @@ export function getIsoDateFromSections(
   }
   return null;
 }
+
+export const startOfYear = (value: Date) => {
+  const newDate = new Date(value);
+  newDate.setUTCMonth(0);
+  newDate.setUTCDate(1);
+  newDate.setUTCHours(0);
+  newDate.setUTCMinutes(0);
+  newDate.setUTCSeconds(0);
+  newDate.setUTCMilliseconds(0);
+
+  return newDate;
+};
+
+export const addMonths = (value: Date, amount: number) => {
+  const newDate = new Date(value);
+  newDate.setUTCMonth(newDate.getUTCMonth() + amount);
+  return newDate;
+};
+
+export const getDaysInMonth = (value: Date) => {
+  const newDate = new Date(value);
+  const month = newDate.getUTCMonth();
+  newDate.setUTCDate(1);
+  let days = 0;
+  while (month === newDate.getUTCMonth()) {
+    newDate.setUTCDate(newDate.getUTCDate() + 1);
+    days++;
+  }
+  return days;
+};

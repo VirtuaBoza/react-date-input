@@ -25,7 +25,6 @@ import {
   getValueStrFromSections,
   isAndroid,
 } from '../internal/utils';
-import { AdapterDateFns } from '../internal/AdapterDateFns';
 import { useFieldCharacterEditing } from '../internal/useFieldCharacterEditing';
 
 export function useDateInput(
@@ -48,7 +47,6 @@ export function useDateInput(
   } = params;
   const inputRef = useRef<HTMLInputElement>(null);
   const handleRef = useForkRef(ref, inputRef);
-  const utils = useMemo(() => new AdapterDateFns(), []);
 
   const { formatLocale, textLocale } = getLocaleInfo(locale);
 
@@ -59,16 +57,11 @@ export function useDateInput(
     });
   });
 
-  const sectionsValueBoundaries = useMemo(
-    () => getSectionsBoundaries(utils),
-    [utils]
-  );
+  const sectionsValueBoundaries = useMemo(() => getSectionsBoundaries(), []);
 
-  const [state, setState] = useState(() => {
-    return {
-      tempValueStrAndroid: null as string | null,
-    };
-  });
+  const [tempValueStrAndroid, setTempValueStrAndroid] = useState<string | null>(
+    null
+  );
 
   const [selectedSections, setSelectedSections] =
     useState<FieldSelectedSections>(null);
@@ -106,8 +99,8 @@ export function useDateInput(
     }, [selectedSections, sections]);
 
   const valueStr = useMemo(
-    () => state.tempValueStrAndroid ?? getValueStrFromSections(sections),
-    [sections, state.tempValueStrAndroid]
+    () => tempValueStrAndroid ?? getValueStrFromSections(sections),
+    [sections, tempValueStrAndroid]
   );
 
   useEnhancedEffect(() => {
@@ -219,10 +212,7 @@ export function useDateInput(
   };
 
   const publishValue = ({ sections }: { sections: FieldSection[] }) => {
-    setState((prevState) => ({
-      ...prevState,
-      tempValueStrAndroid: null,
-    }));
+    setTempValueStrAndroid(null);
     setSections(sections);
   };
 
@@ -252,21 +242,15 @@ export function useDateInput(
     );
 
     setSections(newSections);
-    setState({
-      tempValueStrAndroid: null,
-    });
+    setTempValueStrAndroid(null);
   };
-
-  const setTempAndroidValueStr = (tempValueStrAndroid: string | null) =>
-    setState((prev) => ({ ...prev, tempValueStrAndroid }));
 
   const { applyCharacterEditing, resetCharacterQuery } =
     useFieldCharacterEditing({
       sections: sections,
       updateSectionValue,
       sectionsValueBoundaries,
-      setTempAndroidValueStr,
-      utils,
+      setTempAndroidValueStr: setTempValueStrAndroid,
     });
 
   const clearValue = () => {
@@ -387,7 +371,7 @@ export function useDateInput(
 
       if (keyPressed.length === 0) {
         if (isAndroid()) {
-          setTempAndroidValueStr(valueStr);
+          setTempValueStrAndroid(valueStr);
         } else {
           resetCharacterQuery();
           clearActiveSection();
@@ -564,7 +548,6 @@ export function useDateInput(
           const isoDate = getIsoDateFromSections(sections);
 
           const newSectionValue = adjustSectionValue(
-            utils,
             activeSection,
             event.key as AvailableAdjustKeyCode,
             sectionsValueBoundaries,
