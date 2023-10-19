@@ -63,6 +63,19 @@ export function useDateInput(
   const isoDate = getIsoDateFromSections(sections);
 
   useEffect(() => {
+    const newSections = createSections({
+      formatLocale,
+      textLocale,
+    });
+    setSections((prev) =>
+      newSections.map((section) => ({
+        ...section,
+        value: prev.find((el) => el.type === section.type)!.value,
+      }))
+    );
+  }, [formatLocale, textLocale]);
+
+  useEffect(() => {
     if (
       !inputHasFocus &&
       typeof valueProp !== 'undefined' &&
@@ -548,6 +561,25 @@ export function useDateInput(
             clearActiveSection();
           }
           resetCharacterQuery();
+          break;
+        }
+
+        case event.key === 'Backspace': {
+          if (readOnly || selectedSectionIndexes == null) {
+            break;
+          }
+
+          const activeSection = sections[selectedSectionIndexes.startIndex];
+          if (activeSection.value) {
+            break;
+          }
+
+          const prevIndex = selectedSectionIndexes.startIndex - 1;
+          if (prevIndex >= 0) {
+            event.preventDefault();
+            setSelectedSections(prevIndex);
+          }
+
           break;
         }
 
