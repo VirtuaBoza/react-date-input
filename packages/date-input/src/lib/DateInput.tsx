@@ -3,7 +3,10 @@ import { useDateInput } from './useDateInput';
 import { ComponentProps } from 'react';
 
 export interface DateInputProps
-  extends Omit<ComponentProps<'input'>, keyof UseDateInputParams>,
+  extends Omit<
+      ComponentProps<'input'>,
+      keyof UseDateInputParams | 'max' | 'min' | 'step' | 'type'
+    >,
     UseDateInputParams {}
 
 export function DateInput(props: DateInputProps) {

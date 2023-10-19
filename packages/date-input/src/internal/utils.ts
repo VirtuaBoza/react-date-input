@@ -746,3 +746,114 @@ export function getLocaleInfo(localeFromProps: string | undefined): LocaleInfo {
       : DEFAULT_TEXT_LOCALE,
   };
 }
+
+export function createSections({
+  formatLocale,
+  textLocale,
+}: {
+  formatLocale: string;
+  textLocale: TextLocale;
+}) {
+  const refYear = '3333';
+  const refMonth = '11';
+  const refDay = '22';
+  const refDate = new Date(`${refYear}-${refMonth}-${refDay}`);
+  const formatter = new Intl.DateTimeFormat(formatLocale, {
+    year: 'numeric',
+    day: '2-digit',
+    month: '2-digit',
+    timeZone: 'UTC',
+  });
+  const formattedDate = formatter.format(refDate);
+  const splitDate = formattedDate.split('/');
+  const yearIndex = splitDate.findIndex((el) => el === refYear);
+  const monthIndex = splitDate.findIndex((el) => el === refMonth);
+
+  const sections: FieldSection[] = [];
+  let start = 0;
+  for (let i = 0; i < 3; i++) {
+    const type = i === yearIndex ? 'year' : i === monthIndex ? 'month' : 'day';
+    const { length, format } = (() => {
+      switch (type) {
+        case 'day':
+          return { length: 2, format: 'dd' };
+        case 'month':
+          return { length: 2, format: 'MM' };
+        case 'year':
+          return { length: 4, format: 'yyyy' };
+      }
+    })();
+    const endSeparator = i < 2 ? '/' : '';
+    const end = start + length + endSeparator.length;
+    sections.push({
+      end,
+      endInInput: start + length,
+      endSeparator,
+      format,
+      maxLength: length,
+      modified: false,
+      placeholder: localePlaceholderLetter[textLocale][type].repeat(length),
+      start,
+      type,
+      value: '',
+    });
+    start = end;
+  }
+
+  return sections;
+}
+
+export function mapIsoDateToSectionValues(
+  isoDate: string | null,
+  sections: FieldSection[]
+): FieldSection[] {
+  if (isValidIsoDate(isoDate)) {
+    const [year, month, day] = isoDate.split('-');
+    const values = {
+      year,
+      month,
+      day,
+    };
+    return sections.map((section) => {
+      return {
+        ...section,
+        value: values[section.type],
+      };
+    });
+  }
+  return sections.map((section) => {
+    return {
+      ...section,
+      value: '',
+    };
+  });
+}
+
+export function isValidIsoDate(isoDate: unknown): isoDate is string {
+  if (typeof isoDate === 'string') {
+    try {
+      const date = new Date(isoDate);
+      return date.toISOString().split('T')[0] === isoDate;
+    } catch {
+      // do nothing
+    }
+  }
+  return false;
+}
+
+export function sectionsMatch(
+  sectionsA: FieldSection[],
+  sectionsB: FieldSection[]
+) {
+  if (sectionsA.length !== sectionsB.length) {
+    return false;
+  }
+  let same = true;
+  sectionsA.forEach((sectionA, index) => {
+    const sectionB = sectionsB[index];
+    Object.entries(sectionA).forEach(([key, value]) => {
+      same = same && value === sectionB[key as keyof typeof sectionB];
+    });
+  });
+  return same;
+}

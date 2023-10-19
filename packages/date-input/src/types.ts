@@ -182,8 +182,6 @@ export type UseDateInputParams = Pick<
   ) => void;
   onDateChange?: (date: string | null) => void;
   locale?: string;
-  max?: string;
-  min?: string;
 };
 
 export type UseDateInputResult = {
