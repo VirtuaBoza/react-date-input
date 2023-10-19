@@ -257,7 +257,6 @@ export const addPositionPropertiesToSections = (
       ...section,
       start: position,
       end: position + sectionLength,
-      startInInput,
       endInInput,
     } as FieldSection);
     position += sectionLength;

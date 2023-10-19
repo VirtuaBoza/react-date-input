@@ -18,6 +18,7 @@ import {
   adjustSectionValue,
   areDatesEqual,
   cleanString,
+  createSections,
   getActiveDateManager,
   getActiveElement,
   getDateFromDateSections,
@@ -30,6 +31,7 @@ import {
   isAndroid,
   mergeDateIntoReferenceDate,
   parseValueStr,
+  sectionsMatch,
   splitFormatIntoSections,
   updateReferenceValue,
   validateDate,
@@ -60,6 +62,13 @@ export function useDateInput(
   const utils = useMemo(() => new AdapterDateFns(), []);
 
   const { formatLocale, textLocale } = getLocaleInfo(locale);
+
+  const [mySections, setMySections] = useState(() => {
+    return createSections({
+      formatLocale,
+      textLocale,
+    });
+  });
 
   const firstDefaultValue = useRef(defaultValue);
   const valueFromTheOutside = valueProp ?? firstDefaultValue.current ?? null;
@@ -766,6 +775,13 @@ export function useDateInput(
   const inputHasFocus =
     inputRef.current && inputRef.current === getActiveElement(document);
   const shouldShowPlaceholder = !inputHasFocus && areAllSectionsEmpty;
+
+  const same = sectionsMatch(state.sections, mySections);
+  if (same) {
+    console.log('same');
+  } else {
+    console.log('theirs:', state.sections, 'ours:', mySections);
+  }
 
   return {
     inputProps: {
