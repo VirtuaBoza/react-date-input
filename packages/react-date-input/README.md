@@ -19,8 +19,8 @@ import { useDateInput, UseDateInputParams } from "@abizzle/react-date-input":
 
 export type MyDateInputProps = UseDateInputParams;
 
-export function MyDateInput(props) {
-  const { inputProps } = useDateInput();
+export function MyDateInput(props: MyDateInputProps) {
+  const { inputProps } = useDateInput(props);
 
   return <input {...inputProps} />
 }
@@ -29,10 +29,12 @@ export function MyDateInput(props) {
 Via component:
 
 ```tsx
-import { DateInput } from "@abizzle/react-date-input":
+import { DateInput, DateInputProps } from "@abizzle/react-date-input":
 
-export function MyDateInput() {
-  return <DateInput />
+export type MyDateInputProps = DateInputProps;
+
+export function MyDateInput(props: MyDateInputProps) {
+  return <DateInput {...props} />
 }
 ```
 
