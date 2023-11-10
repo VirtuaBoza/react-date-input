@@ -162,7 +162,7 @@ export type UseDateInputParams = Pick<
 
 export type UseDateInputResult = {
   inputProps: Pick<
-    ComponentPropsWithRef<'input'>,
+    Required<ComponentPropsWithRef<'input'>>,
     | 'inputMode'
     | 'onBlur'
     | 'onClick'
@@ -171,11 +171,11 @@ export type UseDateInputResult = {
     | 'onKeyDown'
     | 'onMouseUp'
     | 'onPaste'
-    | 'readOnly'
     | 'ref'
-    | 'type'
-    | 'value'
   > & {
     'data-iso-date': string;
+    readOnly?: boolean;
+    type: 'text';
+    value: string;
   };
 };
