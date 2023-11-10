@@ -1,5 +1,11 @@
 # @abizzle/react-date-input
 
+## 0.1.3
+
+### Patch Changes
+
+- 2458b0d: Improve accuracy of UseDateInputResult type.
+
 ## 0.1.2
 
 ### Patch Changes
