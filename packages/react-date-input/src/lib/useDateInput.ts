@@ -622,6 +622,12 @@ export function useDateInput(
 
   const shouldShowPlaceholder = !inputHasFocus && !isoDate;
 
+  const setIsoDate = (value: string | null) => {
+    publishValue({
+      sections: mapIsoDateToSectionValues(value, sections),
+    });
+  };
+
   return {
     inputProps: {
       readOnly,
@@ -638,5 +644,7 @@ export function useDateInput(
       type: 'text',
       inputMode: inputMode || 'numeric',
     },
+    isoDate,
+    setIsoDate,
   };
 }

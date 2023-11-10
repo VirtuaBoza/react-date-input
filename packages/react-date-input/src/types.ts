@@ -178,4 +178,6 @@ export type UseDateInputResult = {
     type: 'text';
     value: string;
   };
+  isoDate: string | null;
+  setIsoDate(isoDate: string | null): void;
 };
