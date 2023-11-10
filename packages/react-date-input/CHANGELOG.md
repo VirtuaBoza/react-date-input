@@ -1,5 +1,11 @@
 # @abizzle/react-date-input
 
+## 0.1.4
+
+### Patch Changes
+
+- d31e02c: Add isoDate and setIsoDate props to useDateInput return value.
+
 ## 0.1.3
 
 ### Patch Changes
