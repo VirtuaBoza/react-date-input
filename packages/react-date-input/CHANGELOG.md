@@ -1,5 +1,11 @@
 # @abizzle/react-date-input
 
+## 0.1.5
+
+### Patch Changes
+
+- e0264b3: Prevent TypeError due to missing ref.
+
 ## 0.1.4
 
 ### Patch Changes
