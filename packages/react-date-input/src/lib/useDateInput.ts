@@ -147,7 +147,7 @@ export function useDateInput(
 
     const firstSelectedSection = sections[selectedSectionIndexes.startIndex];
     const lastSelectedSection = sections[selectedSectionIndexes.endIndex];
-    let selectionStart = firstSelectedSection.start;
+    const selectionStart = firstSelectedSection.start;
     let selectionEnd = lastSelectedSection.endInInput;
 
     if (selectedSectionIndexes.shouldSelectBoundarySelectors) {
@@ -176,7 +176,7 @@ export function useDateInput(
       setSelectedSections(null);
       return;
     }
-    const browserStartIndex = inputRef.current!.selectionStart ?? 0;
+    const browserStartIndex = inputRef.current?.selectionStart ?? 0;
     let nextSectionIndex: number;
     if (browserStartIndex <= sections[0].start) {
       // Special case if browser index is in invisible characters at the beginning
